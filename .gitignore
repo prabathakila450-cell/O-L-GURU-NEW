@@ -1,0 +1,54 @@
+# Built application files
+*.apk
+*.aar
+*.ap_
+*.aab
+
+# Files for the ART/DALVIK VM
+*.dex
+
+# Java class files
+*.class
+
+# Generated files & Build outputs
+bin/
+gen/
+out/
+build/
+app/build/
+**/build/
+.build-outputs/
+.gradle/
+.kotlin/
+.idea/
+*.iml
+
+# Platform user attachments
+public/assets/
+assets/
+
+# Local configuration & Keystore
+local.properties
+.env
+debug.keystore
+debug.keystore.base64
+
+# Logs
+*.log
+*-debug.log
+test_output.txt
+
+# BATCHING CONTROL FOR GITHUB PUSH
+# BATCH 1 ACTIVE (Only ~15 core configuration files)
+app/src/main/res/
+app/src/main/java/
+generate_banks.py
+generate_dictionary.py
+app/build_short_answers.py
+app/gen_applied_sets.py
+app/gen_grade10_all.py
+app/gen_grade10_sets11_20.py
+app/gen_humanities_glossary.py
+app/gen_passive_data.py
+app/generate_all_short_answers.py
+app/scripts_generator.py
