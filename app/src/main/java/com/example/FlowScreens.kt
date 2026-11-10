@@ -1430,7 +1430,7 @@ fun SubjectPhotoCard(
           contentAlignment = Alignment.Center
         ) {
           Icon(
-            imageVector = subject.icon,
+            imageVector = subject.icon ?: Icons.Default.Book,
             contentDescription = subject.name,
             tint = Color.White,
             modifier = Modifier.size(20.dp)
@@ -3048,7 +3048,7 @@ fun SubjectContentScreen(
         ScienceGrade10And11MasterHub(
           currentGrade = grade,
           onOpenFullReader = { pdfUrl ->
-            onPdfClick("10 හා 11 ශ්‍රේණි විද්‍යාව විෂය නිර්දේශ Hub", pdfUrl, false, null)
+            onPdfClick("10 හා 11 ශ්‍රේණි විද්‍යාව විෂය නිර්දේශ Hub", pdfUrl, false, null as String?)
           }
         )
 

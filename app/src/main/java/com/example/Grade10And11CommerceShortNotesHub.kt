@@ -1114,7 +1114,7 @@ fun Grade10And11CommerceShortNotesHubScreen(
     SanduCommerceTheoryReaderDialog(
       initialPage = initialBookPage,
       onDismiss = { showCommerceFullBookReader = false },
-      onOpenDrivePdf = onOpenPdfModal
+      onOpenDrivePdf = { url, title -> onOpenPdfModal?.invoke(url, title) }
     )
   }
 

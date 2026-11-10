@@ -2858,7 +2858,7 @@ fun TrueFalse500Content(
 
   // Load questions for selected batch
   val batchQuestions = remember(selectedGrade, selectedSubject, selectedBatchIndex) {
-    TrueFalse500Repository.getQuestionsForBatch(selectedGrade, selectedSubject, selectedBatchIndex)
+    TrueFalse500Repository.getQuestionsForBatch(selectedSubject, selectedBatchIndex)
   }
 
   // Filtered list if mistakes only is on
@@ -2957,7 +2957,7 @@ fun TrueFalse500Content(
                 color = Color.White
               )
               Text(
-                text = "${selectedGrade} ශ්‍රේණිය • කාණ්ඩය #${selectedBatchIndex + 1} (${batchRange.first}-${batchRange.second})",
+                text = "${selectedGrade} ශ්‍රේණිය • කාණ්ඩය #${selectedBatchIndex + 1} (${batchRange.first}-${batchRange.last})",
                 fontSize = 9.sp,
                 color = Color(0xFFF472B6)
               )
@@ -3064,7 +3064,7 @@ fun TrueFalse500Content(
                 color = Color(0xFF0F172A)
               ) {
                 Text(
-                  text = "${effectiveIndex + 1}/${displayedQuestions.size} (#${activeQ.number})",
+                  text = "${effectiveIndex + 1}/${displayedQuestions.size} (#${activeQ.id})",
                   fontSize = 9.5.sp,
                   fontWeight = FontWeight.Bold,
                   color = Color(0xFFCBD5E1),
@@ -3475,7 +3475,9 @@ fun TrueFalse500Content(
           ) {
             items(TrueFalse500Repository.TOTAL_BATCHES) { batchIdx ->
               val isSelected = selectedBatchIndex == batchIdx
-              val (start, end) = TrueFalse500Repository.getBatchRange(batchIdx)
+              val range = TrueFalse500Repository.getBatchRange(batchIdx)
+              val start = range.first
+              val end = range.last
               val batchCount = (start..end).count { qNum ->
                 userAnswers.containsKey("tf_g${selectedGrade}_${selectedSubject.id}_q$qNum")
               }
@@ -3663,7 +3665,7 @@ fun TrueFalse500Content(
                   color = Color(0xFF334155)
                 ) {
                   Text(
-                    text = "${effectiveIndex + 1}/${displayedQuestions.size} (#${activeQ.number})",
+                    text = "${effectiveIndex + 1}/${displayedQuestions.size} (#${activeQ.id})",
                     fontSize = 9.sp,
                     fontWeight = FontWeight.Bold,
                     color = Color(0xFFCBD5E1),
@@ -4113,7 +4115,9 @@ fun TrueFalse500Content(
           ) {
             items(TrueFalse500Repository.TOTAL_BATCHES) { bIdx ->
               val isSel = selectedBatchIndex == bIdx
-              val (st, en) = TrueFalse500Repository.getBatchRange(bIdx)
+              val range = TrueFalse500Repository.getBatchRange(bIdx)
+              val st = range.first
+              val en = range.last
               Surface(
                 onClick = {
                   selectedBatchIndex = bIdx

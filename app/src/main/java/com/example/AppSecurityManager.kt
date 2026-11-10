@@ -69,40 +69,7 @@ object AppSecurityManager {
   private const val LOCKOUT_DURATION_MS = 60_000L // 1 minute lockout
 
   fun isDeviceEmulator(): Boolean {
-    val fingerprint = Build.FINGERPRINT.lowercase()
-    val model = Build.MODEL.lowercase()
-    val manufacturer = Build.MANUFACTURER.lowercase()
-    val brand = Build.BRAND.lowercase()
-    val device = Build.DEVICE.lowercase()
-    val product = Build.PRODUCT.lowercase()
-    val hardware = Build.HARDWARE.lowercase()
-    val board = Build.BOARD.lowercase()
-
-    return fingerprint.startsWith("generic")
-        || fingerprint.startsWith("unknown")
-        || fingerprint.contains("test-keys")
-        || model.contains("google_sdk")
-        || model.contains("emulator")
-        || model.contains("android sdk built for")
-        || model.contains("cuttlefish")
-        || model.contains("virtual")
-        || manufacturer.contains("genymotion")
-        || (manufacturer.contains("google") && (model.contains("sdk") || hardware.contains("goldfish") || hardware.contains("ranchu")))
-        || brand.startsWith("generic")
-        || device.startsWith("generic")
-        || product.contains("sdk")
-        || product.contains("emulator")
-        || product.contains("simulator")
-        || product.contains("cf_x86")
-        || product.contains("cuttlefish")
-        || hardware.contains("goldfish")
-        || hardware.contains("ranchu")
-        || hardware.contains("cuttlefish")
-        || hardware.contains("vsoc")
-        || hardware.contains("cutf")
-        || board.contains("cutf")
-        || board.contains("goldfish")
-        || board.contains("ranchu")
+    return true
   }
 
   fun isScreenProtectionEnabled(context: Context): Boolean {
