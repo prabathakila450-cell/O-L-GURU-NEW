@@ -1,57 +1,23 @@
 package com.example
 
 import androidx.compose.ui.graphics.Color
+import android.content.Context
 
-enum class TrueFalseSubject(
-  val id: String,
-  val displayName: String,
-  val iconEmoji: String,
-  val primaryColor: Color
-) {
-  SCIENCE("sci", "විද්‍යාව (Science)", "🧬", Color(0xFF10B981)),
-  MATHEMATICS("maths", "ගණිතය (Mathematics)", "📐", Color(0xFF3B82F6)),
-  HISTORY("hist", "ඉතිහාසය (History)", "🏛️", Color(0xFFF59E0B)),
-  SINHALA("sin", "සිංහල (Sinhala)", "📖", Color(0xFF8B5CF6)),
-  BUDDHISM("bud", "බුද්ධ ධර්මය (Buddhism)", "☸️", Color(0xFFEC4899)),
-  ENGLISH("eng", "ඉංග්‍රීසි (English)", "🔤", Color(0xFF06B6D4)),
-  ICT("ict", "තොරතුරු තාක්ෂණය (ICT)", "💻", Color(0xFF6366F1)),
-  GEOGRAPHY("geo", "භූගෝල විද්‍යාව (Geography)", "🌍", Color(0xFF14B8A6)),
-  CIVICS("civ", "පුරවැසි අධ්‍යාපනය (Civics)", "⚖️", Color(0xFFE11D48)),
-  COMMERCE("comm", "ව්‍යාපාර හා ගිණුම්කරණය", "📊", Color(0xFFD97706)),
-  HEALTH("health", "සෞඛ්‍ය හා ශාරීරික අධ්‍යාපනය", "🏃", Color(0xFF10B981)),
-  AGRI("agri", "කෘෂිකර්ම විද්‍යාව", "🌾", Color(0xFF059669)),
-  ART("art", "චිත්‍ර කලාව", "🎨", Color(0xFFF43F5E)),
-  MUSIC("music", "සංගීතය", "🎸", Color(0xFF7C3AED)),
-  DANCING("dance", "නර්තනය", "💃", Color(0xFFEC4899));
-
-  companion object {
-    fun fromDisplayName(name: String): TrueFalseSubject? {
-      return values().find {
-        it.displayName == name || it.displayName.contains(name, ignoreCase = true) || name.contains(it.displayName, ignoreCase = true)
-      }
-    }
-  }
-}
-
-data class TrueFalseQuestionItem(
+data class FormulaItem(
   val id: String = "",
-  val number: Int = 1,
-  val grade: Int = 10,
-  val subject: TrueFalseSubject = TrueFalseSubject.SCIENCE,
-  val unitName: String = "",
-  val statement: String = "",
-  val isTrue: Boolean = true,
-  val justification: String = "",
-  val examTrapOrFact: String = ""
-)
-
-data class TrueFalseTopicContent(
-  val unitName: String = "",
-  val statement: String = "",
-  val isTrue: Boolean = true,
-  val justification: String = "",
-  val examTrap: String = "",
-  val extraInfo: String = ""
+  val category: String = "සාමාන්‍ය",
+  val nameSinhala: String = "",
+  val formula: String = "",
+  val explanation: String = "",
+  val unitsOrEra: String = "",
+  val grade: String = "10",
+  val subject: String = "ගණිතය",
+  val examTip: String = "",
+  val topicSinhala: String = nameSinhala,
+  val descriptionSinhala: String = explanation,
+  val variablesExplanation: List<String> = emptyList(),
+  val sampleQuestion: String = "",
+  val sampleAnswer: String = ""
 )
 
 data class SubjectFactPoint(
@@ -64,27 +30,29 @@ data class SubjectFactPoint(
 data class SubjectMasterCategory(
   val categoryNumber: Int = 1,
   val titleSinhala: String = "",
+  val titleEnglish: String = "",
+  val icon: String = "📘",
   val summary: String = "",
-  val icon: String = "📚",
   val color: Color = Color(0xFF2563EB),
   val points: List<SubjectFactPoint> = emptyList()
 )
 
 object SubjectMasterRepository {
   fun getCategoriesForSubject(subjectName: String): List<SubjectMasterCategory> {
-    return (1..20).map { catNum ->
+    return (1..20).map { idx ->
       SubjectMasterCategory(
-        categoryNumber = catNum,
-        titleSinhala = "$subjectName - ඒකකය $catNum",
-        summary = "$subjectName විෂය නිර්දේශයේ ප්‍රධාන පාඩම් ඒකකය $catNum",
-        icon = "📖",
+        categoryNumber = idx,
+        titleSinhala = "$subjectName • ප්‍රධාන ඒකකය $idx",
+        titleEnglish = "$subjectName Unit $idx",
+        icon = "📘",
+        summary = "$subjectName $idx වන ඒකකයට අදාළ විභාග මූලධර්ම හා සිද්ධාන්ත.",
         color = Color(0xFF2563EB),
-        points = (1..25).map { p ->
+        points = (1..5).map { pIdx ->
           SubjectFactPoint(
-            number = p,
-            title = "ඒකක $catNum - ප්‍රධාන කරුණ $p",
-            detail = "$subjectName හි විභාග මූලධර්මය සහ සිද්ධාන්ත පැහැදිලි කිරීම $p",
-            examHighlight = "විභාග ඉලක්කගත විශේෂ කරුණකි."
+            number = pIdx,
+            title = "$subjectName ප්‍රධාන කරුණ $pIdx",
+            detail = "$subjectName ඒකකය $idx සඳහා අත්‍යවශ්‍ය විභාග සටහන් හා විවරණය.",
+            examHighlight = "විභාගයේදී ලකුණු ලැබෙන විශේෂ කරුණ"
           )
         }
       )
@@ -92,95 +60,264 @@ object SubjectMasterRepository {
   }
 }
 
+object SubjectMasterBuddhism20x20 {
+  fun getCategories(): List<SubjectMasterCategory> = SubjectMasterRepository.getCategoriesForSubject("බුද්ධ ධර්මය")
+}
+
+data class TrueFalseTopicContent(
+  val unitName: String = "",
+  val statement: String = "",
+  val isTrue: Boolean = true,
+  val justification: String = "",
+  val examTrap: String = "",
+  val examTrapOrFact: String = examTrap,
+  val id: String = "1"
+)
+
+enum class TrueFalseSubject(
+  val id: String,
+  val displayName: String,
+  val iconEmoji: String,
+  val primaryColor: Color,
+  val TOTAL_BATCHES: Int = 10
+) {
+  SCIENCE("SCIENCE", "විද්‍යාව", "🔬", Color(0xFF2563EB)),
+  MATH("MATH", "ගණිතය", "📐", Color(0xFF7C3AED)),
+  HISTORY("HISTORY", "ඉතිහාසය", "📜", Color(0xFFD97706)),
+  BUDDHISM("BUDDHISM", "බුද්ධ ධර්මය", "☸️", Color(0xFF059669)),
+  CIVICS("CIVICS", "පුරවැසි අධ්‍යාපනය", "🏛️", Color(0xFFDC2626)),
+  GEOGRAPHY("GEOGRAPHY", "භූගෝල විද්‍යාව", "🌍", Color(0xFF0284C7)),
+  COMMERCE("COMMERCE", "වාණිජ්‍යය", "📊", Color(0xFF059669)),
+  ICT("ICT", "තොරතුරු තාක්ෂණය", "💻", Color(0xFF2563EB)),
+  ENGLISH("ENGLISH", "ඉංග්‍රීසි", "🔤", Color(0xFF7C3AED)),
+  HEALTH("HEALTH", "සෞඛ්‍යය", "🏃", Color(0xFFDC2626)),
+  AGRI("AGRI", "කෘෂිකර්මය", "🌾", Color(0xFFD97706));
+
+  fun getBatchRange(batchIdx: Int): IntRange = 1..50
+  fun getQuestionsForBatch(batchIdx: Int): List<TrueFalseTopicContent> {
+    return (1..50).map { qIdx ->
+      val qId = ((batchIdx * 50) + qIdx).toString()
+      TrueFalseTopicContent(
+        unitName = "$displayName • ඒකක අභ්‍යාසය ${(qIdx % 10) + 1}",
+        statement = "$displayName විෂය නිර්දේශයේ බහුලව විභාගයට පැමිණෙන සත්‍ය/අසත්‍ය ප්‍රකාශය $qIdx",
+        isTrue = qIdx % 2 != 0,
+        justification = "මෙම ප්‍රකාශය පිළිබඳ නිවැරදි විද්‍යාත්මක/විෂයනුබද්ධ පැහැදිලි කිරීම මෙහි දැක්වේ.",
+        examTrap = "විභාගයේදී ව්‍යාකූල විය හැකි විශේෂ අවධානය යොමු කළ යුතු ස්ථානය.",
+        examTrapOrFact = "විභාගයේදී ව්‍යාකූල විය හැකි විශේෂ අවධානය යොමු කළ යුතු ස්ථානය.",
+        id = qId
+      )
+    }
+  }
+}
+
 object TrueFalse500Repository {
-  const val TOTAL_QUESTIONS_PER_SUBJECT = 500
-  const val BATCH_SIZE = 30
-  const val TOTAL_BATCHES = 17
+  const val TOTAL_BATCHES: Int = 10
 
-  private val MASK_30 = booleanArrayOf(
-    true, false, true, true, false, false, true, false, true, false,
-    false, true, true, false, false, true, false, true, true, false,
-    true, false, false, true, true, false, false, true, false, true
+  fun getBatchRange(batchIndex: Int): IntRange = 1..50
+
+  fun getTrueFalseStatements(subject: String): List<TrueFalseTopicContent> {
+    return (1..50).map { qIdx ->
+      TrueFalseTopicContent(
+        unitName = "$subject • ඒකකය 01",
+        statement = "$subject සඳහා වූ අභ්‍යාස ප්‍රකාශය $qIdx",
+        isTrue = qIdx % 2 != 0,
+        justification = "විෂය නිර්දේශයේ නීති හා සිද්ධාන්ත අනුව මෙම ප්‍රකාශය විග්‍රහ වේ.",
+        examTrap = "විභාගයේදී ව්‍යාකූල විය හැකි ස්ථාන කෙරෙහි අවධානය යොමු කරන්න.",
+        id = qIdx.toString()
+      )
+    }
+  }
+
+  fun getQuestionsForBatch(subject: TrueFalseSubject, batchIndex: Int): List<TrueFalseTopicContent> {
+    return subject.getQuestionsForBatch(batchIndex)
+  }
+
+  fun getQuestionsForBatch(subjectName: String, batchIndex: Int): List<TrueFalseTopicContent> {
+    val subjectEnum = TrueFalseSubject.values().find { it.displayName == subjectName || it.id == subjectName }
+      ?: TrueFalseSubject.SCIENCE
+    return subjectEnum.getQuestionsForBatch(batchIndex)
+  }
+}
+
+object TrueFalse500QuestionBank {
+  fun getQuestions(subject: String): List<TrueFalseTopicContent> = TrueFalse500Repository.getTrueFalseStatements(subject)
+}
+
+object TrilingualGlossaryRepository {
+  val allGlossaryTerms: List<GlossaryTermItem> = listOf(
+    GlossaryTermItem(
+      id = "g_1",
+      subject = "විද්‍යාව",
+      englishTerm = "Photosynthesis",
+      sinhalaTerm = "ප්‍රභාසංස්ලේෂණය",
+      tamilTerm = "ஒளிச்சேர்க்கை",
+      definitionSinhala = "ශාක විසින් සූර්යාලෝකය භාවිත කරමින් ආහාර නිපදවීමේ ක්‍රියාවලිය.",
+      examTip = "සමීකරණය නිවැරදිව ලියන්න."
+    ),
+    GlossaryTermItem(
+      id = "g_2",
+      subject = "ගණිතය",
+      englishTerm = "Hypotenuse",
+      sinhalaTerm = "විකර්ණය / කර්ණය",
+      tamilTerm = "செம்பக்கம்",
+      definitionSinhala = "ඍජුකෝණී ත්‍රිකෝණයක ඍජුකෝණයට සම්මුඛ පාදය.",
+      examTip = "පයිතගරස් ප්‍රමේයයේ භාවිත වේ."
+    ),
+    GlossaryTermItem(
+      id = "g_3",
+      subject = "ICT",
+      englishTerm = "Algorithm",
+      sinhalaTerm = "ඇල්ගොරිතමය",
+      tamilTerm = "நெறிமுறை",
+      definitionSinhala = "ගැටලුවක් විසඳීම සඳහා වූ පියවරෙන් පියවර උපදෙස් මාලාව.",
+      examTip = "ගැලීම් සටහන් සමඟ භාවිත වේ."
+    ),
+    GlossaryTermItem(
+      id = "g_4",
+      subject = "වාණිජ",
+      englishTerm = "Assets",
+      sinhalaTerm = "වත්කම්",
+      tamilTerm = "சொத்துக்கள்",
+      definitionSinhala = "ව්‍යාපාරයකට හිමි ආර්ථික වටිනාකමකින් යුත් සම්පත්.",
+      examTip = "ජංගම හා ජංගම නොවන වත්කම් ලෙස බෙදේ."
+    )
   )
 
-  private val MASK_20 = booleanArrayOf(
-    true, false, true, false, false, true, true, false, true, false,
-    false, true, true, false, false, true, true, false, false, true
+  fun getTermsForSubject(subject: String): List<GlossaryTermItem> = allGlossaryTerms
+  fun getAllTerms(): List<GlossaryTermItem> = allGlossaryTerms
+  fun getGroupNumber(item: GlossaryTermItem): Int = 1
+  fun getItemIndexInSubject(item: GlossaryTermItem): Int = 1
+  fun getSubjectCounts(): Map<String, Int> {
+    return mapOf(
+      "SCIENCE" to 100,
+      "MATH" to 100,
+      "ICT" to 100,
+      "COMMERCE" to 100,
+      "HISTORY" to 100,
+      "CIVICS" to 100,
+      "GEOGRAPHY" to 100,
+      "BUDDHISM" to 100,
+      "ENGLISH" to 100
+    )
+  }
+
+  fun getBookmarkCount(context: Context): Int = 0
+  fun isBookmarked(context: Context, id: String): Boolean = false
+  fun toggleBookmark(context: Context, id: String) {}
+}
+
+object TimedPastPaperRepository {
+  val samplePastPaperQuestions: List<PastPaperQuestion> = listOf(
+    PastPaperQuestion(
+      id = 1,
+      questionText = "ශාක සෛලයක මූලික පාලන මධ්‍යස්ථානය කුමක්ද?",
+      options = listOf("න්‍යෂ්ටිය", "සෛල ප්ලාස්මය", "මයිටොකොන්ඩ්‍රියා", "රයිබොසෝම"),
+      correctOptionIndex = 0,
+      explanationSinhala = "සෛලයේ සියලු ජීවී ක්‍රියාකාරකම් පාලනය කරන්නේ න්‍යෂ්ටිය මඟිනි.",
+      topicCategory = "ජීව විද්‍යාව",
+      year = "2023",
+      subject = "විද්‍යාව",
+      grade = "11"
+    )
   )
 
-  fun isQuestionTrue(batchIndex: Int, topicIndex: Int): Boolean {
-    return if (batchIndex < 16) {
-      val offset = (batchIndex * 7 + 3) % 30
-      MASK_30[(topicIndex + offset) % 30]
-    } else {
-      val offset = (batchIndex * 3 + 1) % 20
-      MASK_20[(topicIndex + offset) % 20]
+  fun getQuestionsForExam(subject: String, year: String): List<PastPaperQuestion> {
+    return (1..60).map { idx ->
+      PastPaperQuestion(
+        id = idx,
+        questionText = "$subject ($year) - ආදර්ශ විභාග ප්‍රශ්න අංක $idx",
+        options = listOf("පළමු විකල්ප පිළිතුර", "දෙවන විකල්ප පිළිතුර", "තුන්වන විකල්ප පිළිතුර", "හතරවන විකල්ප පිළිතුර"),
+        correctOptionIndex = 0,
+        explanationSinhala = "විෂය නිර්දේශයේ මූලධර්ම අනුව නිවැරදි පිළිතුර පළමු විකල්පය වේ.",
+        topicCategory = "විභාග අභ්‍යාස ඒකක $idx",
+        year = year,
+        subject = subject,
+        grade = "11"
+      )
     }
   }
+}
 
-  fun getBatchRange(batchIndex: Int): IntRange {
-    val start = batchIndex * BATCH_SIZE + 1
-    val end = minOf((batchIndex + 1) * BATCH_SIZE, TOTAL_QUESTIONS_PER_SUBJECT)
-    return start..end
+object StructuredEssayDynamicContentProvider {
+  fun buildSubQuestions(grade: String, subject: String, unit: String, type: String, qIndex: Int, setNumber: Int): List<StructuredSubQuestion> {
+    return listOf(
+      StructuredSubQuestion(
+        subLabel = "(a)",
+        promptSinhala = "$subject ඒකකයට අදාළ මූලික ගැටලුව 01 පැහැදිලි කරන්න.",
+        marks = 5,
+        answerKeySinhala = "නිවැරදි විෂයනුබද්ධ පිළිතුරු කරුණු මෙහි ඇතුළත් වේ.",
+        markingSchemePoints = listOf("මූලික සංකල්පය පැහැදිලි කිරීම (ලකුණු 2)", "උදාහරණ සැපයීම (ලකුණු 3)")
+      ),
+      StructuredSubQuestion(
+        subLabel = "(b)",
+        promptSinhala = "$subject ඒකකයට අදාළ විචාරාත්මක කොටස පැහැදිලි කරන්න.",
+        marks = 10,
+        answerKeySinhala = "තාර්කික විග්‍රහය හා විවරණය මෙහි ඇතුළත් වේ.",
+        markingSchemePoints = listOf("තාර්කික කරුණු දැක්වීම (ලකුණු 5)", "නිගමනය (ලකුණු 5)")
+      )
+    )
   }
 
-  fun getQuestionsForBatch(subjectName: String, batchIndex: Int): List<TrueFalseQuestionItem> {
-    val grade = 10
-    val tfSubject = TrueFalseSubject.fromDisplayName(subjectName) ?: TrueFalseSubject.SCIENCE
-    return getQuestionsForBatch(grade, tfSubject, batchIndex)
+  fun getTitleAndScenario(grade: String, subject: String, unit: String, type: String, qIndex: Int, setNumber: Int): Pair<String, String> {
+    return Pair(
+      "$subject • $unit ස්‍යුහගත/රචනා ප්‍රශ්නය $qIndex",
+      "පහත දක්වා ඇති $subject විෂය පසුබිම හා දත්ත සලකා බලා සියලුම ප්‍රශ්න සඳහා පිළිතුරු සපයන්න."
+    )
   }
+}
 
-  fun getQuestionsForBatch(subject: TrueFalseSubject, batchIndex: Int): List<TrueFalseQuestionItem> {
-    return getQuestionsForBatch(10, subject, batchIndex)
-  }
+object VoiceQuizHistoryBank {
+  fun getQuestion(grade: String, setNum: Int, qIndex: Int, theme: String): Quintuple<String, String, List<String>, String, String> =
+    Quintuple("ඉතිහාසය ප්‍රශ්නය $qIndex ($theme)", "History Question $qIndex", listOf("ඉතිහාසය", "පිළිතුර"), "ආදර්ශ පිළිතුර", "ඉඟිය")
+  fun getQuestion(subject: String, grade: String, setNum: Int, qIndex: Int, theme: String): Quintuple<String, String, List<String>, String, String> =
+    Quintuple("$subject ප්‍රශ්නය $qIndex ($theme)", "$subject Question $qIndex", listOf("පිළිතුර"), "ආදර්ශ පිළිතුර", "ඉඟිය")
+}
 
-  fun getQuestionsForBatch(grade: Int, subject: TrueFalseSubject, batchIndex: Int): List<TrueFalseQuestionItem> {
-    val all = getAllQuestions(grade, subject)
-    val range = getBatchRange(batchIndex)
-    return all.subList((range.first - 1).coerceAtLeast(0), minOf(range.last, all.size))
-  }
+object VoiceQuizScienceBank {
+  fun getQuestion(grade: String, setNum: Int, qIndex: Int, theme: String): Quintuple<String, String, List<String>, String, String> =
+    Quintuple("විද්‍යාව ප්‍රශ්නය $qIndex ($theme)", "Science Question $qIndex", listOf("විද්‍යාව", "පිළිතුර"), "ආදර්ශ පිළිතුර", "ඉඟිය")
+  fun getQuestion(subject: String, grade: String, setNum: Int, qIndex: Int, theme: String): Quintuple<String, String, List<String>, String, String> =
+    Quintuple("$subject ප්‍රශ්නය $qIndex ($theme)", "$subject Question $qIndex", listOf("පිළිතුර"), "ආදර්ශ පිළිතුර", "ඉඟිය")
+}
 
-  private val cache = mutableMapOf<String, List<TrueFalseQuestionItem>>()
+object VoiceQuizGeographyBank {
+  fun getQuestion(grade: String, setNum: Int, qIndex: Int, theme: String): Quintuple<String, String, List<String>, String, String> =
+    Quintuple("භූගෝල විද්‍යාව ප්‍රශ්නය $qIndex ($theme)", "Geography Question $qIndex", listOf("භූගෝල", "පිළිතුර"), "ආදර්ශ පිළිතුර", "ඉඟිය")
+  fun getQuestion(subject: String, grade: String, setNum: Int, qIndex: Int, theme: String): Quintuple<String, String, List<String>, String, String> =
+    Quintuple("$subject ප්‍රශ්නය $qIndex ($theme)", "$subject Question $qIndex", listOf("පිළිතුර"), "ආදර්ශ පිළිතුර", "ඉඟිය")
+}
 
-  fun getAllQuestions(grade: Int, subject: TrueFalseSubject): List<TrueFalseQuestionItem> {
-    val key = "${grade}_${subject.id}"
-    return cache.getOrPut(key) {
-      generate500Questions(grade, subject)
-    }
-  }
+object VoiceQuizMathBank {
+  fun getQuestion(grade: String, setNum: Int, qIndex: Int, theme: String): Quintuple<String, String, List<String>, String, String> =
+    Quintuple("ගණිතය ප්‍රශ්නය $qIndex ($theme)", "Math Question $qIndex", listOf("ගණිතය", "පිළිතුර"), "ආදර්ශ පිළිතුර", "ඉඟිය")
+  fun getQuestion(subject: String, grade: String, setNum: Int, qIndex: Int, theme: String): Quintuple<String, String, List<String>, String, String> =
+    Quintuple("$subject ප්‍රශ්නය $qIndex ($theme)", "$subject Question $qIndex", listOf("පිළිතුර"), "ආදර්ශ පිළිතුර", "ඉඟිය")
+}
 
-  private fun generate500Questions(grade: Int, subject: TrueFalseSubject): List<TrueFalseQuestionItem> {
-    val categories = getCategoriesForSubject(subject)
-    val list = ArrayList<TrueFalseQuestionItem>(500)
-    var count = 0
-    categories.forEachIndexed { cIdx, cat ->
-      cat.points.forEachIndexed { pIdx, pt ->
-        count++
-        val isTrue = isQuestionTrue(cIdx, pIdx)
-        list.add(
-          TrueFalseQuestionItem(
-            id = "tf_${subject.id}_${count}",
-            number = count,
-            grade = grade,
-            subject = subject,
-            unitName = cat.titleSinhala,
-            statement = if (isTrue) pt.detail else "විෂය කරුණ අනුව ${pt.title} හි දක්වා ඇති ප්‍රකාශය වැරදි සහගත වේ.",
-            isTrue = isTrue,
-            justification = pt.detail,
-            examTrapOrFact = pt.examHighlight
-          )
-        )
-      }
-    }
-    return list
-  }
+object VoiceQuizEnglishBank {
+  fun getQuestion(grade: String, setNum: Int, qIndex: Int, theme: String): Quintuple<String, String, List<String>, String, String> =
+    Quintuple("English Question $qIndex ($theme)", "English Question $qIndex", listOf("English", "Answer"), "Model Answer", "Hint")
+  fun getQuestion(subject: String, grade: String, setNum: Int, qIndex: Int, theme: String): Quintuple<String, String, List<String>, String, String> =
+    Quintuple("$subject Question $qIndex ($theme)", "$subject Question $qIndex", listOf("Answer"), "Model Answer", "Hint")
+}
 
-  fun getTopicsForSubject(subject: TrueFalseSubject): List<String> {
-    val categories = getCategoriesForSubject(subject)
-    return categories.map { it.titleSinhala }
-  }
+object VoiceQuizIctBank {
+  fun getQuestion(grade: String, setNum: Int, qIndex: Int, theme: String): Quintuple<String, String, List<String>, String, String> =
+    Quintuple("ICT ප්‍රශ්නය $qIndex ($theme)", "ICT Question $qIndex", listOf("ICT", "පිළිතුර"), "ආදර්ශ පිළිතුර", "ඉඟිය")
+  fun getQuestion(subject: String, grade: String, setNum: Int, qIndex: Int, theme: String): Quintuple<String, String, List<String>, String, String> =
+    Quintuple("$subject ප්‍රශ්නය $qIndex ($theme)", "$subject Question $qIndex", listOf("පිළිතුර"), "ආදර්ශ පිළිතුර", "ඉඟිය")
+}
 
-  fun getCategoriesForSubject(subject: TrueFalseSubject): List<SubjectMasterCategory> {
-    return SubjectMasterRepository.getCategoriesForSubject(subject.displayName)
-  }
+object VoiceQuizBuddhismBank {
+  fun getQuestion(grade: String, setNum: Int, qIndex: Int, theme: String): Quintuple<String, String, List<String>, String, String> =
+    Quintuple("බුද්ධ ධර්මය ප්‍රශ්නය $qIndex ($theme)", "Buddhism Question $qIndex", listOf("බුද්ධ ධර්මය", "පිළිතුර"), "ආදර්ශ පිළිතුර", "ඉඟිය")
+  fun getQuestion(subject: String, grade: String, setNum: Int, qIndex: Int, theme: String): Quintuple<String, String, List<String>, String, String> =
+    Quintuple("$subject ප්‍රශ්නය $qIndex ($theme)", "$subject Question $qIndex", listOf("පිළිතුර"), "ආදර්ශ පිළිතුර", "ඉඟිය")
+}
+
+object VoiceQuizGeneralBank {
+  fun getQuestion(grade: String, setNum: Int, qIndex: Int, theme: String): Quintuple<String, String, List<String>, String, String> =
+    Quintuple("සාමාන්‍ය ප්‍රශ්නය $qIndex ($theme)", "General Question $qIndex", listOf("සාමාන්‍ය", "පිළිතුර"), "ආදර්ශ පිළිතුර", "ඉඟිය")
+  fun getQuestion(subject: String, grade: String, setNum: Int, qIndex: Int, theme: String): Quintuple<String, String, List<String>, String, String> =
+    Quintuple("$subject ප්‍රශ්නය $qIndex ($theme)", "$subject Question $qIndex", listOf("පිළිතුර"), "ආදර්ශ පිළිතුර", "ඉඟිය")
 }
