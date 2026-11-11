@@ -67,10 +67,26 @@ data class InteractiveGrammarQuiz(
   val explanation: String
 )
 
-// SentencePuzzleItem defined in AppModels.kt
+data class SentencePuzzleItem(
+  val id: String,
+  val scrambledWords: List<String>,
+  val correctSentence: String,
+  val sinhalaMeaning: String,
+  val hint: String
+)
 
-// Dialogue models moved to AppModels.kt
+data class DialogueConversation(
+  val id: String,
+  val title: String,
+  val situation: String,
+  val dialogueLines: List<DialogueLine>
+)
 
+data class DialogueLine(
+  val speaker: String,
+  val englishText: String,
+  val sinhalaText: String
+)
 
 data class MiniDictWord(
   val word: String,
@@ -729,7 +745,7 @@ fun EnglishMasterClassScreen(
   }
 
   // Voice Mic Practice Sentences
-  val practiceSentences: List<SpokenSentencePractice> = remember {
+  val practiceSentences = remember {
     listOf(
       SpokenSentencePractice(
         "sp_1",

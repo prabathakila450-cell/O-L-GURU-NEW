@@ -58,7 +58,7 @@ data class ChapterItem(
   val read_aloud_text: String
 )
 
-data class AudioSubjectHubData(
+data class SubjectHubData(
   val grade: String,
   val subject: String,
   val short_notes_pdf_url: String,
@@ -73,12 +73,12 @@ data class AudioSubjectHubData(
 
 object ChapterRepository {
 
-  fun getSubjectHubData(grade: String, subjectName: String, pdfUrl: String = ""): AudioSubjectHubData {
+  fun getSubjectHubData(grade: String, subjectName: String, pdfUrl: String = ""): SubjectHubData {
     val norm = normalizeSubjectKey(subjectName)
     val chapters = getChaptersForSubject(grade, subjectName, norm)
     val quizData = QuizRepository.getQuizDataForSubject(grade, subjectName, pdfUrl)
 
-    return AudioSubjectHubData(
+    return SubjectHubData(
       grade = grade,
       subject = subjectName,
       short_notes_pdf_url = if (pdfUrl.isNotBlank() && !pdfUrl.contains("1sample_100page_notes")) pdfUrl else "https://drive.google.com/file/d/1V3y65z_15X6zjruQ_I11WhG4EOfDHGm-/preview",

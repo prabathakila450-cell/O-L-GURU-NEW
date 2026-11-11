@@ -23,7 +23,6 @@ import java.util.Locale
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 import com.google.firebase.Firebase
-import com.example.ui.theme.*
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
@@ -202,7 +201,25 @@ import com.example.ui.theme.SurfaceVariantLight
 
 import com.google.firebase.firestore.IgnoreExtraProperties
 
-
+@IgnoreExtraProperties
+data class UserAccount(
+  val id: String = "",
+  val fullName: String = "",
+  val usernameOrPhone: String = "",
+  val password: String = "",
+  var isApproved: Boolean = false,
+  val registerDate: String = "2026-08-11",
+  var slipImageUri: String? = null,
+  var paymentStatus: String = "Pending Approval",
+  var requestedGradePackage: String = "10 සහ 11 ශ්‍රේණි (O/L Combo Pack)",
+  var approvedGrades: List<String> = listOf("10", "11", "10 ශ්‍රේණිය", "11 ශ්‍රේණිය"),
+  var boundDeviceId: String? = null,
+  var boundDeviceName: String? = null,
+  var boundDate: String? = null,
+  var approvalTimestamp: Long? = null,
+  var requestDate: String? = null,
+  var requestTimestamp: Long? = null
+)
 
 // Subscription Validity: 6 Months (දින 180 / රු. 1,000)
 const val APPROVAL_VALIDITY_DAYS = 180L
@@ -436,7 +453,51 @@ fun getSavedGitHubShareUrl(context: Context): String {
     ?: "https://github.com/prabathakila450-cell/O-L-Guru/releases/download/latest/app-debug.apk"
 }
 
+data class SubjectItem(
+  val id: String,
+  val name: String,
+  val nameSinhala: String,
+  val chaptersCount: Int,
+  val color: Color,
+  val icon: androidx.compose.ui.graphics.vector.ImageVector
+)
 
+data class ShortNoteItem(
+  val id: String,
+  val subject: String,
+  val title: String,
+  val topicSinhala: String,
+  val readTime: String,
+  val isPopular: Boolean = false,
+  val pdfUri: String? = null,
+  val fileName: String? = null,
+  val isPasswordProtected: Boolean = false,
+  val password: String? = "1234"
+)
+
+data class QuestionPaperItem(
+  val id: String,
+  val subject: String,
+  val titleSinhala: String,
+  val year: String,
+  val term: String,
+  val marks: String,
+  val pdfUri: String? = null,
+  val fileName: String? = null,
+  val isPasswordProtected: Boolean = false,
+  val password: String? = "1234"
+)
+
+data class VideoLessonItem(
+  val id: String,
+  val subject: String,
+  val titleSinhala: String,
+  val duration: String,
+  val tutorName: String,
+  val viewsCount: String,
+  val isHd: Boolean = true,
+  val videoUri: String? = null
+)
 
 fun getFileNameFromUri(context: Context, uri: Uri): String {
   var fileName = "Document.pdf"
@@ -520,7 +581,8 @@ class MainActivity : ComponentActivity() {
 
   override fun onCreate(savedInstanceState: Bundle?) {
     super.onCreate(savedInstanceState)
-
+    // Pre-create Chromium WebView code cache directories with full read/write/traversal permissions
+    StudentPortalApplication.initWebViewCacheDirectories(cacheDir)
 
     window.setBackgroundDrawable(android.graphics.drawable.ColorDrawable(android.graphics.Color.parseColor("#F8FAFC")))
     AppSecurityManager.applyScreenProtection(this, !AppSecurityManager.isAdminSession)
@@ -662,31 +724,18 @@ fun StudentPortalApp() {
           it.usernameOrPhone.trim().equals(cloudUser.usernameOrPhone.trim(), ignoreCase = true) 
         }
         if (existingIndex >= 0) {
+          // Cloud data takes precedence for approval status
           val local = registeredUsers[existingIndex]
-          val isThisAdmin = isAuthorizedAdminUser(cloudUser.usernameOrPhone)
-          val updated = local.copy(
-            isApproved = if (isThisAdmin) true else cloudUser.isApproved,
-            approvalTimestamp = cloudUser.approvalTimestamp ?: local.approvalTimestamp,
-            paymentStatus = if (isThisAdmin) "Approved" else cloudUser.paymentStatus,
-            slipImageUri = cloudUser.slipImageUri ?: local.slipImageUri,
-            boundDeviceId = cloudUser.boundDeviceId ?: local.boundDeviceId,
-            boundDeviceName = cloudUser.boundDeviceName ?: local.boundDeviceName,
-            approvedGrades = if (cloudUser.approvedGrades.isNotEmpty()) cloudUser.approvedGrades else local.approvedGrades
-          )
-          registeredUsers[existingIndex] = updated
-          if (loggedInUser?.usernameOrPhone?.trim()?.equals(cloudUser.usernameOrPhone.trim(), ignoreCase = true) == true) {
-            loggedInUser = updated
+          if (local.isApproved != cloudUser.isApproved || local.approvalTimestamp != cloudUser.approvalTimestamp) {
+            registeredUsers[existingIndex] = local.copy(
+              isApproved = cloudUser.isApproved,
+              approvalTimestamp = cloudUser.approvalTimestamp,
+              paymentStatus = cloudUser.paymentStatus
+            )
           }
         } else {
-          val isThisAdmin = isAuthorizedAdminUser(cloudUser.usernameOrPhone)
-          val syncedUser = cloudUser.copy(
-            isApproved = if (isThisAdmin) true else cloudUser.isApproved,
-            paymentStatus = if (isThisAdmin) "Approved" else cloudUser.paymentStatus
-          )
-          registeredUsers.add(syncedUser)
-          if (loggedInUser?.usernameOrPhone?.trim()?.equals(cloudUser.usernameOrPhone.trim(), ignoreCase = true) == true) {
-            loggedInUser = syncedUser
-          }
+          // Add new user from cloud
+          registeredUsers.add(cloudUser)
         }
       }
       saveUsersToPreferences(context, registeredUsers.toList())
@@ -1255,17 +1304,9 @@ fun StudentPortalApp() {
       showIframePdfModal -> {
         showIframePdfModal = false
       }
-      showSanduTheoryFullReaderGlobal -> {
-        showSanduTheoryFullReaderGlobal = false
-      }
-      showSinhalaVicharaDharaReaderGlobal -> {
-        showSinhalaVicharaDharaReaderGlobal = false
-      }
-      showScienceDiagramsReaderGlobal -> {
-        showScienceDiagramsReaderGlobal = false
-      }
-      showSecurityPanelDialog -> {
-        showSecurityPanelDialog = false
+      showPasswordDialog -> {
+        showPasswordDialog = false
+        showPasswordError = false
       }
       showAuthRequiredDialog -> {
         showAuthRequiredDialog = false
@@ -1273,29 +1314,10 @@ fun StudentPortalApp() {
       showPaymentApprovalDialog -> {
         showPaymentApprovalDialog = false
       }
-      showAdminDashboardMasterDialog -> {
-        showAdminDashboardMasterDialog = false
-      }
-      showNotificationCenterDialog -> {
-        showNotificationCenterDialog = false
-      }
-      showAdminBroadcastComposerDialog -> {
-        showAdminBroadcastComposerDialog = false
-      }
-      showPasswordDialog -> {
-        showPasswordDialog = false
-        showPasswordError = false
-      }
       showAddContentDialog -> {
         showAddContentDialog = false
         selectedPdfUri = null
         selectedPdfFileName = null
-      }
-      showGradeNotApprovedDialog -> {
-        showGradeNotApprovedDialog = false
-      }
-      showDrmWarningDialog -> {
-        showDrmWarningDialog = false
       }
       previewReceiptImageUrl != null -> {
         previewReceiptImageUrl = null
@@ -1313,11 +1335,11 @@ fun StudentPortalApp() {
       showPdfQuizBottomSheet -> {
         showPdfQuizBottomSheet = false
       }
-      showEyeCareSettingsSheet -> {
-        showEyeCareSettingsSheet = false
-      }
       currentScreen == "SYLLABUS_HUB" -> {
         currentScreen = if (selectedSubjectItem != null) "CONTENT" else "HOME"
+      }
+      showEyeCareSettingsSheet -> {
+        showEyeCareSettingsSheet = false
       }
       currentScreen == "CONTENT" -> {
         initialTopicNotesFilter = ""
@@ -1335,11 +1357,27 @@ fun StudentPortalApp() {
       currentScreen == "ENGLISH_SHORT_NOTES_AUTO_CHECKER" -> {
         currentScreen = "ENGLISH_BUILDER"
       }
-      currentScreen == "ENGLISH_VOICE_DOUBT_SOLVER" -> {
-        currentScreen = "ENGLISH_CLASS"
+      currentScreen == "GRADE_10_11_MATH_SHORT_NOTES" || currentScreen == "GRADE_10_11_COMMERCE_SHORT_NOTES" -> {
+        currentScreen = if (selectedSubjectItem != null) "CONTENT" else "HOME"
       }
-      currentScreen != "HOME" -> {
-        currentScreen = if (selectedSubjectItem != null && currentScreen != "CONTENT" && currentScreen != "SUBJECTS") "CONTENT" else "HOME"
+      currentScreen in listOf("ANALYTICS", "STRUCTURED_ESSAY", "FORMULA_HANDBOOK", "VOICE_QUIZ", "ENGLISH_BUILDER", "FLASHCARDS_HUB", "SPOKEN_ENGLISH_VOICE", "BOOKMARKS_HUB", "EYE_CARE_HUB", "HISTORY_MAPS_AUTO_CHECKER", "MISTAKE_NOTEBOOK", "MOCK_EXAM") -> {
+        currentScreen = "HOME"
+        selectedTabNav = 0
+      }
+      currentScreen == "GEOGRAPHY_AUTO_CHECKER" -> {
+        currentScreen = if (selectedSubjectItem != null) "CONTENT" else "HOME"
+        selectedTabNav = 0
+      }
+      currentScreen == "OL_SPECIAL_FEATURES" -> {
+        currentScreen = if (selectedSubjectItem != null) "CONTENT" else "HOME"
+        selectedTabNav = 0
+      }
+      currentScreen == "GRADE_10_11_COMMERCE_SHORT_NOTES" -> {
+        currentScreen = if (selectedSubjectItem != null) "CONTENT" else "HOME"
+        selectedTabNav = 0
+      }
+      currentScreen == "GRADE_10_11_MATH_SHORT_NOTES" -> {
+        currentScreen = if (selectedSubjectItem != null) "CONTENT" else "HOME"
         selectedTabNav = 0
       }
       else -> {
@@ -1544,7 +1582,7 @@ fun StudentPortalApp() {
           },
           onOpenNotesForSubject = { subjectName, topicKeyword ->
             val matched = currentSubjects.firstOrNull { it.nameSinhala.contains(subjectName, ignoreCase = true) }
-            initialTopicNotesFilter = topicKeyword.toString()
+            initialTopicNotesFilter = topicKeyword
             if (matched != null) {
               selectedSubjectItem = matched
               selectedContentTab = 0
@@ -1963,6 +2001,7 @@ fun StudentPortalApp() {
       } else if (effectiveScreen == "VOICE_DOUBT_SOLVER") {
         // 🎙️ FEATURE: AI VOICE DOUBT SOLVER & STEP-BY-STEP EXPLAINER
         VoiceDoubtSolverScreen(
+          initialGrade = selectedGrade,
           onBack = {
             currentScreen = if (selectedSubjectItem != null) "CONTENT" else "HOME"
             selectedTabNav = 0
@@ -2092,8 +2131,8 @@ fun StudentPortalApp() {
               SecuritySubscriptionBanner(
                 isApproved = isApprovedUser,
                 isFeatureTrialActive = isFeatureTrialActive,
-                remainingTrialHours = remainingTrialHours.toInt(),
-                remainingTrialMinutes = remainingTrialMinutes.toInt(),
+                remainingTrialHours = remainingTrialHours,
+                remainingTrialMinutes = remainingTrialMinutes,
                 isApprovalExpired = isApprovalExpiredForLoggedInUser,
                 remainingApprovalDays = loggedInUser?.getRemainingApprovalDays() ?: 180,
                 onClick = {
@@ -2283,7 +2322,7 @@ fun StudentPortalApp() {
               },
               isFeatureTrialActive = isFeatureTrialActive,
               isApproved = isApprovedUser,
-              remainingTrialHours = remainingTrialHours.toInt()
+              remainingTrialHours = remainingTrialHours
             )
           }
 
@@ -2968,25 +3007,6 @@ fun StudentPortalApp() {
         )
       }
 
-      // Security & Payment Approval Request Dialog
-      if (showPaymentApprovalDialog) {
-        SecurityPaymentApprovalDialog(
-          user = loggedInUser,
-          preselectedPackage = preselectedGradeForApproval,
-          registeredUsers = registeredUsers,
-          onDismiss = { showPaymentApprovalDialog = false },
-          onUsersUpdated = {
-            saveUsersToPreferences(context, registeredUsers.toList())
-            loggedInUser?.let { curr ->
-              val updated = registeredUsers.find { it.id == curr.id || it.usernameOrPhone == curr.usernameOrPhone }
-              if (updated != null) {
-                loggedInUser = updated
-              }
-            }
-          }
-        )
-      }
-
 
 
       // Receipt Preview Fullscreen Modal Dialog
@@ -3358,10 +3378,10 @@ fun StudentPortalApp() {
           Surface(
             modifier = Modifier.fillMaxSize(),
             color = when (activeEyeCareMode) {
-              EyeCareThemeMode.LIGHT, EyeCareThemeMode.NORMAL, EyeCareThemeMode.DEFAULT, EyeCareThemeMode.BLUE_LIGHT -> Color.White
+              EyeCareThemeMode.LIGHT -> Color.White
               EyeCareThemeMode.SEPIA -> Color(0xFFFDF6E2)
-              EyeCareThemeMode.DARK, EyeCareThemeMode.NIGHT, EyeCareThemeMode.OLED -> Color(0xFF0F172A)
-              EyeCareThemeMode.BLUE_LIGHT_SHIELD, EyeCareThemeMode.AMBER -> Color(0xFF131B2E)
+              EyeCareThemeMode.DARK -> Color(0xFF0F172A)
+              EyeCareThemeMode.BLUE_LIGHT_SHIELD -> Color(0xFF131B2E)
             }
           ) {
             Column(modifier = Modifier.fillMaxSize()) {
@@ -3369,10 +3389,10 @@ fun StudentPortalApp() {
               AnimatedVisibility(visible = !isFullScreenReadingMode) {
                 Surface(
                   color = when (activeEyeCareMode) {
-                    EyeCareThemeMode.LIGHT, EyeCareThemeMode.NORMAL, EyeCareThemeMode.DEFAULT, EyeCareThemeMode.BLUE_LIGHT -> Color(0xFF0F172A)
+                    EyeCareThemeMode.LIGHT -> Color(0xFF0F172A)
                     EyeCareThemeMode.SEPIA -> Color(0xFF451A03)
-                    EyeCareThemeMode.DARK, EyeCareThemeMode.NIGHT, EyeCareThemeMode.OLED -> Color(0xFF020617)
-                    EyeCareThemeMode.BLUE_LIGHT_SHIELD, EyeCareThemeMode.AMBER -> Color(0xFF0B132B)
+                    EyeCareThemeMode.DARK -> Color(0xFF020617)
+                    EyeCareThemeMode.BLUE_LIGHT_SHIELD -> Color(0xFF0B132B)
                   },
                   modifier = Modifier
                     .fillMaxWidth()
@@ -3455,10 +3475,10 @@ fun StudentPortalApp() {
                         Surface(
                           onClick = {
                             val nextMode = when (activeEyeCareMode) {
-                              EyeCareThemeMode.LIGHT, EyeCareThemeMode.NORMAL, EyeCareThemeMode.DEFAULT -> EyeCareThemeMode.DARK
-                              EyeCareThemeMode.DARK, EyeCareThemeMode.NIGHT, EyeCareThemeMode.OLED -> EyeCareThemeMode.SEPIA
-                              EyeCareThemeMode.SEPIA, EyeCareThemeMode.AMBER -> EyeCareThemeMode.BLUE_LIGHT_SHIELD
-                              EyeCareThemeMode.BLUE_LIGHT_SHIELD, EyeCareThemeMode.BLUE_LIGHT -> EyeCareThemeMode.LIGHT
+                              EyeCareThemeMode.LIGHT -> EyeCareThemeMode.DARK
+                              EyeCareThemeMode.DARK -> EyeCareThemeMode.SEPIA
+                              EyeCareThemeMode.SEPIA -> EyeCareThemeMode.BLUE_LIGHT_SHIELD
+                              EyeCareThemeMode.BLUE_LIGHT_SHIELD -> EyeCareThemeMode.LIGHT
                             }
                             activeEyeCareMode = nextMode
                             saveEyeCareTheme(context, nextMode)
@@ -3476,10 +3496,10 @@ fun StudentPortalApp() {
                             Spacer(modifier = Modifier.width(2.dp))
                             Text(
                               text = when (activeEyeCareMode) {
-                                EyeCareThemeMode.LIGHT, EyeCareThemeMode.NORMAL, EyeCareThemeMode.DEFAULT -> "දිවා"
-                                EyeCareThemeMode.SEPIA, EyeCareThemeMode.AMBER -> "සේපියා"
-                                EyeCareThemeMode.DARK, EyeCareThemeMode.NIGHT, EyeCareThemeMode.OLED -> "රාත්‍රී"
-                                EyeCareThemeMode.BLUE_LIGHT_SHIELD, EyeCareThemeMode.BLUE_LIGHT -> "Shield"
+                                EyeCareThemeMode.LIGHT -> "දිවා"
+                                EyeCareThemeMode.SEPIA -> "සේපියා"
+                                EyeCareThemeMode.DARK -> "රාත්‍රී"
+                                EyeCareThemeMode.BLUE_LIGHT_SHIELD -> "Shield"
                               },
                               color = Color(0xFF38BDF8),
                               fontSize = 8.5.sp,
@@ -3618,9 +3638,9 @@ fun StudentPortalApp() {
                   .fillMaxWidth()
                   .background(
                     when (activeEyeCareMode) {
-                      EyeCareThemeMode.LIGHT, EyeCareThemeMode.NORMAL, EyeCareThemeMode.DEFAULT, EyeCareThemeMode.BLUE_LIGHT -> Color.White
-                      EyeCareThemeMode.SEPIA, EyeCareThemeMode.AMBER -> Color(0xFFFDF6E2)
-                      EyeCareThemeMode.DARK, EyeCareThemeMode.NIGHT, EyeCareThemeMode.OLED -> Color(0xFF0F172A)
+                      EyeCareThemeMode.LIGHT -> Color.White
+                      EyeCareThemeMode.SEPIA -> Color(0xFFFDF6E2)
+                      EyeCareThemeMode.DARK -> Color(0xFF0F172A)
                       EyeCareThemeMode.BLUE_LIGHT_SHIELD -> Color(0xFF131B2E)
                     }
                   )
@@ -4399,7 +4419,7 @@ fun SubjectCardRow(
           contentAlignment = Alignment.Center
         ) {
           Icon(
-            imageVector = subject.icon ?: Icons.Default.Book,
+            imageVector = subject.icon,
             contentDescription = subject.name,
             tint = subject.color,
             modifier = Modifier.size(20.dp)
@@ -4985,7 +5005,6 @@ fun TopHeaderSection(
           EyeCareThemeMode.SEPIA -> Color(0xFFF5EACF)
           EyeCareThemeMode.DARK -> Color(0xFF1E293B)
           EyeCareThemeMode.BLUE_LIGHT_SHIELD -> Color(0xFF1C273E)
-          else -> Color(0xFFEFF6FF)
         },
         border = BorderStroke(
           1.dp,
@@ -4994,7 +5013,6 @@ fun TopHeaderSection(
             EyeCareThemeMode.SEPIA -> Color(0xFFD6C4A5)
             EyeCareThemeMode.DARK -> Color(0xFF475569)
             EyeCareThemeMode.BLUE_LIGHT_SHIELD -> Color(0xFFF59E0B)
-            else -> Color(0xFFBFDBFE)
           }
         ),
         modifier = Modifier
@@ -9032,13 +9050,13 @@ fun LoginAndApprovalDialog(
 ) {
   val context = LocalContext.current
   val coroutineScope = androidx.compose.runtime.rememberCoroutineScope()
-  val (currDevId, currDevName) = getDeviceIdentifier(context)
+  val (currDevId, _) = getDeviceIdentifier(context)
   val savedPhone = getSavedLoggedInUserPhone(context)
   val pendingUserForDevice = registeredUsers.find { 
     (it.boundDeviceId == currDevId || (!savedPhone.isNullOrBlank() && it.usernameOrPhone.trim().equals(savedPhone.trim(), ignoreCase = true))) 
     && !it.isApproved && !isAuthorizedAdminUser(it.usernameOrPhone) 
   }
-  var selectedTab by remember(initialTab) { mutableStateOf(initialTab.coerceIn(0, 2)) }
+  var selectedTab by remember(initialTab) { mutableStateOf(if (pendingUserForDevice != null) 0 else 0) } // Force Registration tab (0) as default
 
   // Login Form State
   var loginPhone by remember { mutableStateOf("") }
@@ -9141,13 +9159,13 @@ fun LoginAndApprovalDialog(
               Spacer(modifier = Modifier.width(10.dp))
               Column {
                 Text(
-                  text = "🔐 පරිශීලක ප්‍රවේශය (Student & Admin Login)",
+                  text = "🔒 ඇඩ්මින් අනුමැතිය (Admin Approval)",
                   style = MaterialTheme.typography.titleMedium,
                   fontWeight = FontWeight.Bold,
                   color = NeutralDark
                 )
                 Text(
-                  text = "ඇප් එකට පිවිසීමට ලොග් වන්න හෝ ලියාපදිංචි වන්න",
+                  text = "PDF නැරඹීමට ලියාපදිංචි වී අනුමැතිය ලබාගන්න",
                   fontSize = 10.sp,
                   color = NeutralMedium
                 )
@@ -9165,14 +9183,14 @@ fun LoginAndApprovalDialog(
 
           Spacer(modifier = Modifier.height(16.dp))
 
-        // Tabs Header (Student Login, Student Registration, Admin Login)
+        // Tabs Header (Unified Student & Admin Registration)
         Surface(
           shape = RoundedCornerShape(12.dp),
           color = Color(0xFFF1F5F9),
           modifier = Modifier.fillMaxWidth()
         ) {
           TabRow(
-            selectedTabIndex = selectedTab.coerceIn(0, 2),
+            selectedTabIndex = selectedTab.coerceIn(0, 1),
             containerColor = Color(0xFFF1F5F9),
             contentColor = BluePrimary,
             indicator = {}
@@ -9189,10 +9207,10 @@ fun LoginAndApprovalDialog(
                 ) {
                   Box(contentAlignment = Alignment.Center, modifier = Modifier.padding(vertical = 6.dp)) {
                     Text(
-                      "🔑 ලොග් වීම",
+                      "ලියාපදිංචිය",
                       fontWeight = if (selectedTab == 0) FontWeight.Bold else FontWeight.Medium,
-                      fontSize = 11.5.sp,
-                      color = if (selectedTab == 0) Color(0xFF1D4ED8) else NeutralMedium
+                      fontSize = 12.sp,
+                      color = if (selectedTab == 0) Color(0xFF137333) else NeutralMedium
                     )
                   }
                 }
@@ -9210,31 +9228,10 @@ fun LoginAndApprovalDialog(
                 ) {
                   Box(contentAlignment = Alignment.Center, modifier = Modifier.padding(vertical = 6.dp)) {
                     Text(
-                      "📝 ලියාපදිංචිය",
-                      fontWeight = if (selectedTab == 1) FontWeight.Bold else FontWeight.Medium,
-                      fontSize = 11.5.sp,
-                      color = if (selectedTab == 1) Color(0xFF137333) else NeutralMedium
-                    )
-                  }
-                }
-              }
-            )
-            Tab(
-              selected = selectedTab == 2,
-              onClick = { selectedTab = 2 },
-              text = {
-                Surface(
-                  shape = RoundedCornerShape(8.dp),
-                  color = if (selectedTab == 2) Color.White else Color.Transparent,
-                  shadowElevation = if (selectedTab == 2) 1.dp else 0.dp,
-                  modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)
-                ) {
-                  Box(contentAlignment = Alignment.Center, modifier = Modifier.padding(vertical = 6.dp)) {
-                    Text(
                       "👑 ඇඩ්මින්",
-                      fontWeight = if (selectedTab == 2) FontWeight.Bold else FontWeight.Medium,
-                      fontSize = 11.5.sp,
-                      color = if (selectedTab == 2) Color(0xFFB45309) else NeutralMedium
+                      fontWeight = if (selectedTab == 1) FontWeight.Bold else FontWeight.Medium,
+                      fontSize = 12.sp,
+                      color = if (selectedTab == 1) Color(0xFFB45309) else NeutralMedium
                     )
                   }
                 }
@@ -9247,160 +9244,145 @@ fun LoginAndApprovalDialog(
 
         when (selectedTab) {
           0 -> {
-            // TAB 0: STUDENT LOGIN FORM
-            Text(
-              text = "🔑 ශිෂ්‍ය ගිණුමට පිවිසෙන්න (Student Login)",
-              fontWeight = FontWeight.Bold,
-              fontSize = 14.sp,
-              color = NeutralDark,
-              modifier = Modifier.fillMaxWidth()
-            )
-            Spacer(modifier = Modifier.height(4.dp))
-            Text(
-              text = "ඔබගේ දුරකථන අංකය සහ මුරපදය ඇතුළත් කර ඇතුළු වන්න.",
-              fontSize = 11.sp,
-              color = NeutralMedium,
-              modifier = Modifier.fillMaxWidth()
-            )
-            Spacer(modifier = Modifier.height(14.dp))
-
-            androidx.compose.material3.OutlinedTextField(
-              value = loginPhone,
-              onValueChange = { loginPhone = it },
-              label = { Text("දුරකථන අංකය (Phone Number)") },
-              placeholder = { Text("07XXXXXXXX") },
-              leadingIcon = { Icon(Icons.Default.Phone, contentDescription = "Phone") },
-              textStyle = TextStyle(color = Color.Black, fontSize = 14.sp),
-              colors = OutlinedTextFieldDefaults.colors(
-                focusedTextColor = Color.Black,
-                unfocusedTextColor = Color.Black,
-                focusedLabelColor = Color(0xFF1E3A8A),
-                unfocusedLabelColor = Color(0xFF4B5563),
-                focusedBorderColor = Color(0xFF1E3A8A),
-                unfocusedBorderColor = Color(0xFFD1D5DB),
-                cursorColor = Color.Black
-              ),
-              singleLine = true,
-              modifier = Modifier.fillMaxWidth()
-            )
-            Spacer(modifier = Modifier.height(10.dp))
-
-            androidx.compose.material3.OutlinedTextField(
-              value = loginPassword,
-              onValueChange = { loginPassword = it },
-              label = { Text("මුරපදය (Password)") },
-              placeholder = { Text("මුරපදය ඇතුළත් කරන්න") },
-              leadingIcon = { Icon(Icons.Default.Lock, contentDescription = "Password") },
-              trailingIcon = {
-                IconButton(onClick = { showLoginPassword = !showLoginPassword }) {
+            // REGISTER FORM
+            if (pendingUserForDevice != null) {
+              // PROMINENT PENDING APPROVAL STATUS CARD
+              Surface(
+                shape = RoundedCornerShape(16.dp),
+                color = Color(0xFFFFF7ED),
+                border = BorderStroke(2.dp, Color(0xFFF97316)),
+                modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp)
+              ) {
+                Column(
+                  modifier = Modifier.padding(16.dp),
+                  horizontalAlignment = Alignment.CenterHorizontally
+                ) {
                   Icon(
-                    imageVector = if (showLoginPassword) Icons.Default.Visibility else Icons.Default.VisibilityOff,
-                    contentDescription = "Toggle Password"
+                    imageVector = Icons.Default.Pending,
+                    contentDescription = "Pending",
+                    tint = Color(0xFFF97316),
+                    modifier = Modifier.size(56.dp)
                   )
-                }
-              },
-              textStyle = TextStyle(color = Color.Black, fontSize = 14.sp),
-              colors = OutlinedTextFieldDefaults.colors(
-                focusedTextColor = Color.Black,
-                unfocusedTextColor = Color.Black,
-                focusedLabelColor = Color(0xFF1E3A8A),
-                unfocusedLabelColor = Color(0xFF4B5563),
-                focusedBorderColor = Color(0xFF1E3A8A),
-                unfocusedBorderColor = Color(0xFFD1D5DB),
-                cursorColor = Color.Black
-              ),
-              visualTransformation = if (showLoginPassword) VisualTransformation.None else PasswordVisualTransformation(),
-              singleLine = true,
-              modifier = Modifier.fillMaxWidth()
-            )
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            Button(
-              onClick = {
-                val cleanPhone = loginPhone.trim().replace(" ", "").replace("-", "")
-                val cleanPass = loginPassword.trim()
-                if (cleanPhone.isBlank()) {
-                  Toast.makeText(context, "කරුණාකර දුරකථන අංකය ඇතුළත් කරන්න", Toast.LENGTH_SHORT).show()
-                  return@Button
-                }
-
-                // Check Admin Account
-                if (isAuthorizedAdminUser(cleanPhone)) {
-                  val adminUser = registeredUsers.find { isAuthorizedAdminUser(it.usernameOrPhone) }
-                    ?: UserAccount("1", "අකිල ප්‍රභාත් දිසානායක (Admin)", cleanPhone, cleanPass.ifBlank { "A20020521PD" }, isApproved = true, paymentStatus = "Approved", requestedGradePackage = "06 සිට 11 දක්වා සියලුම ශ්‍රේණි (All Grades Mega Pack)", approvedGrades = listOf("06", "07", "08", "09", "10", "11", "6 ශ්‍රේණිය", "7 ශ්‍රේණිය", "8 ශ්‍රේණිය", "9 ශ්‍රේණිය", "10 ශ්‍රේණිය", "11 ශ්‍රේණිය"))
-                  setAdminSessionActive(context, true)
-                  onAdminLoginSuccess()
-                  onLoginSuccess(adminUser)
-                  Toast.makeText(context, "👑 සාර්ථකව ඇතුළු විය! (Admin Session Active)", Toast.LENGTH_SHORT).show()
-                  return@Button
-                }
-
-                val existingUser = registeredUsers.find { it.usernameOrPhone.trim().replace(" ", "").replace("-", "").equals(cleanPhone, ignoreCase = true) }
-                if (existingUser != null) {
-                  if (existingUser.isApproved) {
-                    if (existingUser.isApprovalExpired()) {
-                      Toast.makeText(context, "⚠️ ඔබගේ මාස 6ක (දින 180) ඇඩ්මින් අනුමැතිය අවසන් වී ඇත! කරුණාකර රු. 1000 ගෙවා අලුත් කරගන්න (0772843861 / 0717136085).", Toast.LENGTH_LONG).show()
-                    } else {
-                      val updatedUser = existingUser.copy(
-                        boundDeviceId = existingUser.boundDeviceId ?: currDevId,
-                        boundDeviceName = existingUser.boundDeviceName ?: currDevName
-                      )
-                      onLoginSuccess(updatedUser)
-                      coroutineScope.launch {
-                        CloudAuthManager.syncUserToCloud(context, updatedUser)
-                      }
-                      Toast.makeText(context, "✨ සාර්ථකව ඇතුළු විය! සාදරයෙන් පිළිගනිමු ${updatedUser.fullName}!", Toast.LENGTH_SHORT).show()
-                    }
-                  } else {
-                    // Account exists but pending Admin Approval
-                    if (PersistentTrialSecurityManager.isTrialActive(context)) {
-                      val updatedUser = existingUser.copy(
-                        boundDeviceId = existingUser.boundDeviceId ?: currDevId,
-                        boundDeviceName = existingUser.boundDeviceName ?: currDevName
-                      )
-                      onLoginSuccess(updatedUser)
-                      Toast.makeText(context, "✨ ඇතුළු විය! ඔබ දැනට පැය 24 නොමිලේ කාලය භාවිත කරයි (ඇඩ්මින් අනුමැතිය ලැබෙන තෙක්).", Toast.LENGTH_LONG).show()
-                    } else {
-                      Toast.makeText(context, "🔒 ඔබගේ ගිණුම තවම ඇඩ්මින් මඟින් අනුමත කර නොමැත. (පැය 24 නොමිලේ කාලය අවසන් වී ඇත). කරුණාකර 0772843861 / 0717136085 හරහා අනුමැතිය ලබාගන්න.", Toast.LENGTH_LONG).show()
-                    }
+                  Spacer(modifier = Modifier.height(14.dp))
+                  Text(
+                    text = "අනුමැතිය පොරොත්තු ලේඛනයේ ඇත",
+                    fontWeight = FontWeight.ExtraBold,
+                    fontSize = 17.sp,
+                    color = Color(0xFF9A3412),
+                    textAlign = TextAlign.Center
+                  )
+                  Text(
+                    text = "(Approval Pending)",
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color(0xFF9A3412),
+                    textAlign = TextAlign.Center
+                  )
+                  
+                  Spacer(modifier = Modifier.height(14.dp))
+                  HorizontalDivider(color = Color(0xFFFFEDD5))
+                  Spacer(modifier = Modifier.height(14.dp))
+                  
+                  Text(
+                    text = "👤 නම: ${pendingUserForDevice.fullName}",
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 14.5.sp,
+                    color = Color(0xFF431407)
+                  )
+                  Text(
+                    text = "📞 දුරකථනය: ${pendingUserForDevice.usernameOrPhone}",
+                    fontSize = 13.sp,
+                    color = Color(0xFF431407)
+                  )
+                  
+                  Spacer(modifier = Modifier.height(16.dp))
+                  
+                  Text(
+                    text = "ඔබ දැනටමත් සාර්ථකව ලියාපදිංචි වී ඇත. ඇඩ්මින් විසින් ඔබගේ විස්තර පරීක්ෂා කර අනුමත කරන තෙක් කරුණාකර රැඳී සිටින්න. අනුමත වූ පසු ඔබට සියලුම අන්තර්ගතයන් විවෘත වනු ඇත.",
+                    fontSize = 11.5.sp,
+                    color = Color(0xFF7C2D12),
+                    textAlign = TextAlign.Center,
+                    lineHeight = 17.sp
+                  )
+                  
+                  Spacer(modifier = Modifier.height(20.dp))
+                  
+                  Button(
+                    onClick = {
+                      val whatsappMsg = "ආයුබෝවන් ඇඩ්මින්!\n\nමම O/L Guru ඇප් එකේ ලියාපදිංචි වී අනුමැතිය අපේක්ෂාවෙන් සිටිමි. කරුණාකර මගේ ගිණුම පරීක්ෂා කර අනුමත කරන්න.\n\n👤 නම: ${pendingUserForDevice.fullName}\n📞 අංකය: ${pendingUserForDevice.usernameOrPhone}\n📦 පැකේජය: 10 ශ්‍රේණිය හා 11 ශ්‍රේණිය\n\nස්තූතියි!"
+                      val encodedMsg = Uri.encode(whatsappMsg)
+                      val wpUri = Uri.parse("https://wa.me/94772843861?text=$encodedMsg")
+                      val intent = Intent(Intent.ACTION_VIEW, wpUri)
+                      try {
+                        context.startActivity(intent)
+                      } catch (_: Exception) {}
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFF97316)),
+                    shape = RoundedCornerShape(12.dp),
+                    modifier = Modifier.fillMaxWidth().height(46.dp)
+                  ) {
+                    Icon(Icons.Default.Chat, contentDescription = "WhatsApp")
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("ඇඩ්මින්ට WhatsApp පණිවිඩයක් යවන්න", fontWeight = FontWeight.Bold, fontSize = 12.sp)
                   }
-                } else {
-                  Toast.makeText(context, "ලියාපදිංචි වී නොමැති දුරකථන අංකයකි. කරුණාකර 'ලියාපදිංචිය' ටැබ් එක හරහා ලියාපදිංචි වන්න.", Toast.LENGTH_LONG).show()
-                  selectedTab = 1
                 }
-              },
-              colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1D4ED8)),
-              shape = RoundedCornerShape(12.dp),
-              modifier = Modifier.fillMaxWidth().height(48.dp)
-            ) {
-              Icon(Icons.Default.LockOpen, contentDescription = "Log In")
-              Spacer(modifier = Modifier.width(8.dp))
-              Text("ලොග් වන්න (Log In)", fontWeight = FontWeight.Bold, fontSize = 14.sp)
-            }
-
-            Spacer(modifier = Modifier.height(14.dp))
-            TextButton(onClick = { selectedTab = 1 }) {
-              Text("තවම ගිණුමක් නැද්ද? මෙතැනින් ලියාපදිංචි වන්න", fontSize = 11.5.sp, color = Color(0xFF1D4ED8))
-            }
-          }
-          1 -> {
-            // TAB 1: REGISTER FORM
+              }
+            } else {
+              Text(
+                text = "නව ශිෂ්‍ය ලියාපදිංචිය (New Registration)",
+                fontWeight = FontWeight.Bold,
+                fontSize = 14.sp,
+                color = NeutralDark,
+                modifier = Modifier.fillMaxWidth()
+              )
+            Spacer(modifier = Modifier.height(6.dp))
             Text(
-              text = "📝 නව ශිෂ්‍ය ලියාපදිංචිය (New Registration)",
-              fontWeight = FontWeight.Bold,
-              fontSize = 14.sp,
-              color = NeutralDark,
-              modifier = Modifier.fillMaxWidth()
-            )
-            Spacer(modifier = Modifier.height(4.dp))
-            Text(
-              text = "ඔබගේ නම, දුරකථන අංකය සහ මුරපදය ඇතුළත් කර ලියාපදිංචි වන්න.",
+              text = "ලියාපදිංචි වන මුල් දුරකථනයට පමණක් ගිණුම ආරක්ෂිතව සම්බන්ධ වේ (Device Locked).",
               fontSize = 11.sp,
               color = NeutralMedium,
               modifier = Modifier.fillMaxWidth()
             )
             Spacer(modifier = Modifier.height(10.dp))
+
+            // Sleek Permanent Bank Details Card for Registration Form
+            Surface(
+              shape = RoundedCornerShape(12.dp),
+              color = Color(0xFFF0F7FF),
+              border = BorderStroke(1.2.dp, Color(0xFF3B82F6)),
+              modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp)
+            ) {
+              Column(modifier = Modifier.padding(12.dp)) {
+                Text(
+                  text = "ඔබගේ පැය 24ක නොමිලේ පරිශීලක කාලය අවසන් වී ඇත. සීමාවකින් තොරව මාස 6ක භාවිතය සඳහා රු. 1000ක මුදලක් පහත ගිණුමට තැන්පත් කර ස්ලිප් එකේ පැහැදිලි ඡායාරූපයක් එක් කරන්න.",
+                  fontSize = 11.sp,
+                  fontWeight = FontWeight.Bold,
+                  color = Color(0xFF1E3A8A),
+                  lineHeight = 16.sp
+                )
+                
+                Spacer(modifier = Modifier.height(10.dp))
+
+
+
+                Spacer(modifier = Modifier.height(10.dp))
+                HorizontalDivider(color = Color(0xFFBFDBFE))
+                Spacer(modifier = Modifier.height(8.dp))
+
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                  Icon(Icons.Default.AccountBalance, contentDescription = "Bank", tint = BluePrimary, modifier = Modifier.size(18.dp))
+                  Spacer(modifier = Modifier.width(8.dp))
+                  Text("🏛️ ලංකා බැංකුව (Bank of Ceylon)", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = BluePrimary)
+                }
+
+                Spacer(modifier = Modifier.height(8.dp))
+                
+                CopyableDetailBar("ගිණුම් අංකය (Account Number)", "90313771")
+                CopyableDetailBar("ගිණුම් නම (Account Name)", "D.H.M A P DISANAYAKA")
+                CopyableDetailBar("ශාඛාව (Branch)", "අඹන්පොල ශාඛාව (Bank of Ceylon)")
+              }
+            }
+
+
 
             androidx.compose.material3.OutlinedTextField(
               value = regName,
@@ -9415,7 +9397,9 @@ fun LoginAndApprovalDialog(
                 unfocusedLabelColor = Color(0xFF4B5563),
                 focusedBorderColor = Color(0xFF1E3A8A),
                 unfocusedBorderColor = Color(0xFFD1D5DB),
-                cursorColor = Color.Black
+                cursorColor = Color.Black,
+                focusedPlaceholderColor = Color.Gray,
+                unfocusedPlaceholderColor = Color.Gray
               ),
               singleLine = true,
               modifier = Modifier.fillMaxWidth()
@@ -9435,7 +9419,9 @@ fun LoginAndApprovalDialog(
                 unfocusedLabelColor = Color(0xFF4B5563),
                 focusedBorderColor = Color(0xFF1E3A8A),
                 unfocusedBorderColor = Color(0xFFD1D5DB),
-                cursorColor = Color.Black
+                cursorColor = Color.Black,
+                focusedPlaceholderColor = Color.Gray,
+                unfocusedPlaceholderColor = Color.Gray
               ),
               singleLine = true,
               modifier = Modifier.fillMaxWidth()
@@ -9455,7 +9441,9 @@ fun LoginAndApprovalDialog(
                 unfocusedLabelColor = Color(0xFF4B5563),
                 focusedBorderColor = Color(0xFF1E3A8A),
                 unfocusedBorderColor = Color(0xFFD1D5DB),
-                cursorColor = Color.Black
+                cursorColor = Color.Black,
+                focusedPlaceholderColor = Color.Gray,
+                unfocusedPlaceholderColor = Color.Gray
               ),
               visualTransformation = PasswordVisualTransformation(),
               singleLine = true,
@@ -9464,7 +9452,7 @@ fun LoginAndApprovalDialog(
 
             Spacer(modifier = Modifier.height(12.dp))
 
-            // Bank Receipt Upload Section
+            // Bank Receipt Upload Section at bottom of detail fields
             Text(
               text = "📸 බැංකු රිසිට්පත (Bank Slip / Screenshot) - විකල්ප:",
               fontSize = 11.5.sp,
@@ -9545,60 +9533,85 @@ fun LoginAndApprovalDialog(
 
             Button(
               onClick = {
-                val cleanPhone = regPhone.trim().replace(" ", "").replace("-", "")
+                val (currDevId, currDevName) = getDeviceIdentifier(context)
+                val cleanPhone = regPhone.trim()
                 if (regName.isBlank() || cleanPhone.isBlank()) {
-                  Toast.makeText(context, "කරුණාකර නම සහ දුරකථන අංකය ඇතුළත් කරන්න", Toast.LENGTH_SHORT).show()
+                  Toast.makeText(context, "කරුණාකර සියලු විස්තර ඇතුළත් කරන්න", Toast.LENGTH_SHORT).show()
+                  return@Button
+                }
+                if (AppSecurityManager.isVpnConnected(context)) {
+                  Toast.makeText(context, "🚫 VPN සක්‍රීයව පවතී! VPN ක්‍රියාවිරහිත කර ලියාපදිංචි වන්න.", Toast.LENGTH_LONG).show()
                   return@Button
                 }
                 if (isAuthorizedAdminUser(cleanPhone)) {
-                  selectedTab = 2
+                  Toast.makeText(context, "❌ මෙම දුරකථන අංකය / Email එක ඇඩ්මින්වරයාගේ නිල ගිණුමකි. ලියාපදිංචි විය නොහැක. කරුණාකර 'ඇඩ්මින්' මඟින් පිවිසෙන්න.", Toast.LENGTH_LONG).show()
+                  selectedTab = 1
+                  return@Button
+                }
+                val existing = registeredUsers.find { it.usernameOrPhone.trim().equals(cleanPhone, ignoreCase = true) }
+                if (existing != null) {
+                  Toast.makeText(context, "⚠️ ඔබ දැනටමත් ලියාපදිංචි වී ඇත! ඔබගේ ගිණුම ඇඩ්මින් අනුමැතිය සඳහා පොරොත්තු ලැයිස්තුවේ පවතී.", Toast.LENGTH_LONG).show()
                   return@Button
                 }
 
-                val currentNow = System.currentTimeMillis()
-                val currentNowFormatted = SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault()).format(Date(currentNow))
-                val newAcc = UserAccount(
-                  id = currentNow.toString(),
-                  fullName = regName.trim(),
-                  usernameOrPhone = cleanPhone,
-                  password = regPassword.trim().ifBlank { "1234" },
-                  isApproved = false,
-                  slipImageUri = regSlipUri?.toString(),
-                  paymentStatus = "Pending Approval",
-                  requestedGradePackage = "06 සිට 11 දක්වා සියලුම ශ්‍රේණි (All Grades)",
-                  approvedGrades = listOf("06", "07", "08", "09", "10", "11", "6 ශ්‍රේණිය", "7 ශ්‍රේණිය", "8 ශ්‍රේණිය", "9 ශ්‍රේණිය", "10 ශ්‍රේණිය", "11 ශ්‍රේණිය"),
-                  boundDeviceId = currDevId,
-                  boundDeviceName = currDevName,
-                  requestDate = currentNowFormatted,
-                  requestTimestamp = currentNow,
-                  approvalTimestamp = null
-                )
-
-                val existingIdx = registeredUsers.indexOfFirst { it.usernameOrPhone.trim().replace(" ", "").replace("-", "").equals(cleanPhone, ignoreCase = true) }
-                if (existingIdx >= 0) {
-                  registeredUsers[existingIdx] = newAcc
-                } else {
+                // Helper to perform the actual registration and sync
+                val performRegistration = {
+                  val currentNow = System.currentTimeMillis()
+                  val currentNowFormatted = SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault()).format(Date(currentNow))
+                  val newAcc = UserAccount(
+                    id = currentNow.toString(),
+                    fullName = regName.trim(),
+                    usernameOrPhone = cleanPhone,
+                    password = regPassword.trim().ifBlank { "1234" },
+                    isApproved = false,
+                    slipImageUri = regSlipUri?.toString(),
+                    paymentStatus = if (regSlipUri != null) "Pending Approval (With Slip)" else "Pending Approval",
+                    requestedGradePackage = "06 සිට 11 දක්වා සියලුම ශ්‍රේණි (All Grades)",
+                    approvedGrades = listOf("06", "07", "08", "09", "10", "11", "6 ශ්‍රේණිය", "7 ශ්‍රේණිය", "8 ශ්‍රේණිය", "9 ශ්‍රේණිය", "10 ශ්‍රේණිය", "11 ශ්‍රේණිය"),
+                    boundDeviceId = currDevId,
+                    boundDeviceName = currDevName,
+                    boundDate = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date(currentNow)),
+                    requestDate = currentNowFormatted,
+                    requestTimestamp = currentNow
+                  )
                   registeredUsers.add(0, newAcc)
-                }
-                onUsersUpdated()
-                
-                coroutineScope.launch {
-                  CloudAuthManager.syncUserToCloud(context, newAcc)
-                }
-
-                if (PersistentTrialSecurityManager.isTrialActive(context)) {
+                  onUsersUpdated()
                   onLoginSuccess(newAcc)
-                  Toast.makeText(context, "📝 ලියාපදිංචිය සාර්ථකයි! පැය 24 නොමිලේ කාලය භාවිතයෙන් ඇප් එක භාවිතා කළ හැක. ඇඩ්මින් අනුමැතිය සඳහා රිසිට්පත එවන්න (0772843861 / 0717136085).", Toast.LENGTH_LONG).show()
-                } else {
-                  Toast.makeText(context, "📝 ලියාපදිංචි වීම සාර්ථකයි! ඇඩ්මින් අනුමැතිය (රු. 1000/මාස 6) ලබාගත් පසු ඇප් එකට පිවිසිය හැක. අමතන්න: 0772843861 / 0717136085", Toast.LENGTH_LONG).show()
-                  onDismiss()
+                  
+                  // Cloud Sync
+                  coroutineScope.launch {
+                    CloudAuthManager.syncUserToCloud(context, newAcc)
+                  }
+                  
+                  // WhatsApp Direct Sharing for Admin Approval
+                  val whatsappMsg = "ආයුබෝවන් ඇඩ්මින්!\n\nමම O/L Guru ඇප් එකේ අලුතින් ලියාපදිංචි වුනා. කරුණාකර මගේ ගිණුම පරීක්ෂා කර අනුමත කරන්න.\n\n👤 නම: ${newAcc.fullName}\n📞 අංකය: ${newAcc.usernameOrPhone}\n📦 පැකේජය: 10 ශ්‍රේණිය හා 11 ශ්‍රේණිය\n📅 දිනය: ${newAcc.requestDate}\n\nස්තූතියි!"
+                  val encodedMsg = Uri.encode(whatsappMsg)
+                  val wpUri = Uri.parse("https://wa.me/94772843861?text=$encodedMsg")
+                  val intent = Intent(Intent.ACTION_VIEW, wpUri)
+                  try {
+                    context.startActivity(intent)
+                    Toast.makeText(context, "📝 ලියාපදිංචිය සාර්ථකයි! විස්තර WhatsApp මඟින් ඇඩ්මින්ට යොමු විය.", Toast.LENGTH_LONG).show()
+                  } catch (_: Exception) {
+                    Toast.makeText(context, "📝 ලියාපදිංචිය සාර්ථකයි! ඇඩ්මින් පරීක්ෂා කර අනුමත කරන තෙක් මාස 6 සක්‍රීය නොවේ.", Toast.LENGTH_LONG).show()
+                  }
+                  
+                  regName = ""
+                  regPhone = ""
+                  regPassword = ""
+                  regSlipUri = null
+                  regSlipName = null
                 }
 
-                regName = ""
-                regPhone = ""
-                regPassword = ""
-                regSlipUri = null
-                regSlipName = null
+                // Automatic Cloud Sync (Google Sign-In) before registration
+                if (com.google.firebase.Firebase.auth.currentUser == null) {
+                  onGoogleSignInClicked(context, androidx.credentials.CredentialManager.create(context), {
+                    performRegistration()
+                  }, { err ->
+                    Toast.makeText(context, "⚠️ Cloud Sync අසාර්ථකයි: $err. කරුණාකර නැවත උත්සාහ කරන්න.", Toast.LENGTH_LONG).show()
+                  }, coroutineScope)
+                } else {
+                  performRegistration()
+                }
               },
               colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF137333)),
               shape = RoundedCornerShape(12.dp),
@@ -9608,8 +9621,9 @@ fun LoginAndApprovalDialog(
               Spacer(modifier = Modifier.width(8.dp))
               Text("ලියාපදිංචි වී ඇතුළු වන්න", fontWeight = FontWeight.Bold)
             }
+            }
           }
-          2 -> {
+          1 -> {
             // ADMIN APPROVAL PANEL
             if (!isAdminUnlocked) {
               Text(
@@ -10403,410 +10417,4 @@ fun LoginAndApprovalDialog(
     )
   }
 }
-}
-
-fun shareApprovalRequestToWhatsApp(
-  context: Context,
-  studentName: String,
-  studentPhone: String,
-  requestedPackage: String,
-  slipAttached: Boolean = false,
-  targetAdminPhone: String = "94772843861"
-) {
-  val dateStr = SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault()).format(Date())
-  val message = """
-🎓 *O/L Guru - ඇඩ්මින් අනුමැති ඉල්ලීම (Approval Request)*
-
-👤 *ශිෂ්‍යයාගේ නම:* $studentName
-📱 *දුරකථන අංකය:* $studentPhone
-📦 *තෝරාගත් පැකේජය:* $requestedPackage
-📸 *බැංකු රිසිට්පත:* ${if (slipAttached) "ඇමුණා ඇත ✅ (ඇප් එකේ පරීක්ෂා කරන්න)" else "තවම නොමැත ❌"}
-📅 *දිනය & වේලාව:* $dateStr
-
-කරුණාකර මෙම ශිෂ්‍ය ගිණුම පරීක්ෂා කර මාස 6ක (දින 180) ඇඩ්මින් අනුමැතිය (Admin Approval) ලබාදෙන්න.
-""".trimIndent()
-
-  try {
-    val cleanAdminPhone = targetAdminPhone.replace("+", "").replace(" ", "").replace("-", "")
-    val url = "https://api.whatsapp.com/send?phone=$cleanAdminPhone&text=${Uri.encode(message)}"
-    val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url)).apply {
-      addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-    }
-    context.startActivity(intent)
-  } catch (e: Exception) {
-    Toast.makeText(context, "WhatsApp යෙදුම විවෘත කළ නොහැක: ${e.localizedMessage}", Toast.LENGTH_LONG).show()
-  }
-}
-
-@Composable
-fun SecurityPaymentApprovalDialog(
-  user: UserAccount?,
-  preselectedPackage: String,
-  registeredUsers: SnapshotStateList<UserAccount>,
-  onDismiss: () -> Unit,
-  onUsersUpdated: () -> Unit
-) {
-  val context = LocalContext.current
-  val coroutineScope = androidx.compose.runtime.rememberCoroutineScope()
-  val (currDevId, currDevName) = getDeviceIdentifier(context)
-
-  var studentName by remember { mutableStateOf(user?.fullName ?: "") }
-  var studentPhone by remember { mutableStateOf(user?.usernameOrPhone ?: "") }
-  var selectedPackage by remember(preselectedPackage) {
-    mutableStateOf(preselectedPackage.ifBlank { "10 සහ 11 ශ්‍රේණි (O/L Combo Pack)" })
-  }
-  var slipUri by remember { mutableStateOf<Uri?>(null) }
-  var slipFileName by remember { mutableStateOf<String?>(null) }
-
-  val slipPickerLauncher = rememberLauncherForActivityResult(
-    contract = ActivityResultContracts.GetContent()
-  ) { uri: Uri? ->
-    if (uri != null) {
-      slipUri = uri
-      slipFileName = getFileNameFromUri(context, uri)
-      Toast.makeText(context, "බැංකු රිසිට්පත අමුණන ලදී: $slipFileName", Toast.LENGTH_SHORT).show()
-    }
-  }
-
-  Dialog(
-    onDismissRequest = onDismiss,
-    properties = DialogProperties(
-      decorFitsSystemWindows = false,
-      usePlatformDefaultWidth = false,
-      securePolicy = AppSecurityManager.getSecureFlagPolicy()
-    )
-  ) {
-    Box(
-      modifier = Modifier
-        .fillMaxWidth(0.95f)
-        .fillMaxHeight(0.92f)
-        .imePadding()
-        .systemBarsPadding()
-        .padding(vertical = 10.dp),
-      contentAlignment = Alignment.Center
-    ) {
-      Card(
-        shape = RoundedCornerShape(20.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
-        border = BorderStroke(1.5.dp, Color(0xFF2563EB)),
-        elevation = CardDefaults.cardElevation(defaultElevation = 10.dp),
-        modifier = Modifier
-          .fillMaxWidth()
-          .wrapContentHeight()
-      ) {
-        Column(
-          modifier = Modifier
-            .fillMaxWidth()
-            .verticalScroll(rememberScrollState())
-            .padding(16.dp),
-          horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-          // Top Header
-          Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-          ) {
-            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.weight(1f)) {
-              Surface(
-                shape = CircleShape,
-                color = Color(0xFFEFF6FF),
-                border = BorderStroke(1.dp, Color(0xFF3B82F6)),
-                modifier = Modifier.size(42.dp)
-              ) {
-                Box(contentAlignment = Alignment.Center) {
-                  Icon(Icons.Default.Verified, contentDescription = "Approval", tint = Color(0xFF2563EB), modifier = Modifier.size(24.dp))
-                }
-              }
-              Spacer(modifier = Modifier.width(10.dp))
-              Column {
-                Text(
-                  text = "💳 ඇඩ්මින් අනුමැතිය (Admin Approval)",
-                  fontWeight = FontWeight.Bold,
-                  fontSize = 14.5.sp,
-                  color = Color(0xFF1E293B)
-                )
-                Text(
-                  text = "රු. 1,000 ගෙවා මාස 6ක (දින 180) අනුමැතිය සක්‍රීය කරගන්න",
-                  fontSize = 10.5.sp,
-                  color = Color(0xFF64748B)
-                )
-              }
-            }
-            IconButton(onClick = onDismiss) {
-              Icon(Icons.Default.Close, contentDescription = "Close", tint = Color(0xFF64748B))
-            }
-          }
-
-          Spacer(modifier = Modifier.height(14.dp))
-
-          // Package Price Card Banner
-          Surface(
-            shape = RoundedCornerShape(12.dp),
-            color = Color(0xFFEFF6FF),
-            border = BorderStroke(1.dp, Color(0xFF93C5FD)),
-            modifier = Modifier.fillMaxWidth()
-          ) {
-            Row(
-              modifier = Modifier.padding(12.dp),
-              verticalAlignment = Alignment.CenterVertically,
-              horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-              Column {
-                Text("ගාස්තුව: රු. 1,000 / මාස 6 (දින 180)", fontWeight = FontWeight.Bold, fontSize = 13.sp, color = Color(0xFF1D4ED8))
-                Text("සියලුම කෙටි සටහන්, විභාග පත්‍ර & AI Tools සඳහා", fontSize = 10.sp, color = Color(0xFF3B82F6))
-              }
-              Surface(
-                shape = RoundedCornerShape(20.dp),
-                color = Color(0xFF2563EB)
-              ) {
-                Text("රු. 1,000", fontSize = 11.sp, fontWeight = FontWeight.ExtraBold, color = Color.White, modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp))
-              }
-            }
-          }
-
-          Spacer(modifier = Modifier.height(14.dp))
-
-          // Bank Deposit Details Box
-          Surface(
-            shape = RoundedCornerShape(12.dp),
-            color = Color(0xFFF8FAFC),
-            border = BorderStroke(1.dp, Color(0xFFE2E8F0)),
-            modifier = Modifier.fillMaxWidth()
-          ) {
-            Column(modifier = Modifier.padding(12.dp)) {
-              Text("🏦 බැංකු ගිණුම් විස්තර (Bank Deposit Info):", fontWeight = FontWeight.Bold, fontSize = 11.5.sp, color = Color(0xFF0F172A))
-              Spacer(modifier = Modifier.height(6.dp))
-              Text("• ලංකා බැංකුව (BOC) / කොමර්ෂල් බැංකුව (Commercial Bank)", fontSize = 11.sp, color = Color(0xFF334155))
-              Text("• ගිණුම් හිමියා: අකිල ප්‍රභාත් දිසානායක (A.P. Dissanayaka)", fontSize = 11.sp, color = Color(0xFF334155), fontWeight = FontWeight.SemiBold)
-              Text("• ගිණුම් අංකය: 8325XXXXX / 0772843861", fontSize = 11.sp, color = Color(0xFF334155))
-              Text("• ඇඩ්මින් දුරකථන/WhatsApp: 0772843861 / 0717136085", fontSize = 11.sp, color = Color(0xFF2563EB), fontWeight = FontWeight.Bold)
-            }
-          }
-
-          Spacer(modifier = Modifier.height(14.dp))
-
-          // Package Selector Options
-          Text("📦 අනුමැතිය අවශ්‍ය පාඨමාලා පැකේජය තෝරන්න:", fontWeight = FontWeight.Bold, fontSize = 11.5.sp, color = Color(0xFF0F172A), modifier = Modifier.fillMaxWidth())
-          Spacer(modifier = Modifier.height(6.dp))
-
-          val packages = listOf(
-            "10 සහ 11 ශ්‍රේණි (O/L Combo Pack)",
-            "10 ශ්‍රේණිය (Grade 10 Single Pack)",
-            "11 ශ්‍රේණිය (Grade 11 Single Pack)",
-            "06 සිට 11 දක්වා සියලුම ශ්‍රේණි (All Grades Mega Pack)"
-          )
-
-          packages.forEach { pkg ->
-            val isSelected = selectedPackage.contains(pkg.take(10)) || selectedPackage == pkg
-            Surface(
-              onClick = { selectedPackage = pkg },
-              shape = RoundedCornerShape(10.dp),
-              color = if (isSelected) Color(0xFFEFF6FF) else Color(0xFFFAFAFA),
-              border = BorderStroke(1.dp, if (isSelected) Color(0xFF2563EB) else Color(0xFFE5E7EB)),
-              modifier = Modifier.fillMaxWidth().padding(bottom = 6.dp)
-            ) {
-              Row(
-                modifier = Modifier.padding(horizontal = 10.dp, vertical = 8.dp),
-                verticalAlignment = Alignment.CenterVertically
-              ) {
-                if (isSelected) {
-                  Icon(
-                    imageVector = Icons.Default.CheckCircle,
-                    contentDescription = "Select",
-                    tint = Color(0xFF2563EB),
-                    modifier = Modifier.size(18.dp)
-                  )
-                } else {
-                  Box(
-                    modifier = Modifier
-                      .size(18.dp)
-                      .border(1.5.dp, Color(0xFF9CA3AF), CircleShape)
-                  )
-                }
-                Spacer(modifier = Modifier.width(8.dp))
-                Text(
-                  text = pkg,
-                  fontSize = 11.5.sp,
-                  fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
-                  color = if (isSelected) Color(0xFF1E40AF) else Color(0xFF374151)
-                )
-              }
-            }
-          }
-
-          Spacer(modifier = Modifier.height(10.dp))
-
-          // Name and Phone fields
-          androidx.compose.material3.OutlinedTextField(
-            value = studentName,
-            onValueChange = { studentName = it },
-            label = { Text("ඔබගේ නම (Student Name)") },
-            singleLine = true,
-            modifier = Modifier.fillMaxWidth()
-          )
-          Spacer(modifier = Modifier.height(8.dp))
-
-          androidx.compose.material3.OutlinedTextField(
-            value = studentPhone,
-            onValueChange = { studentPhone = it },
-            label = { Text("දුරකථන අංකය (Phone Number)") },
-            singleLine = true,
-            modifier = Modifier.fillMaxWidth()
-          )
-
-          Spacer(modifier = Modifier.height(12.dp))
-
-          // Attach Slip Section
-          if (slipUri != null) {
-            Surface(
-              shape = RoundedCornerShape(8.dp),
-              color = Color(0xFFECFDF5),
-              border = BorderStroke(1.dp, Color(0xFF10B981)),
-              modifier = Modifier.fillMaxWidth()
-            ) {
-              Row(
-                modifier = Modifier.padding(8.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
-              ) {
-                Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.weight(1f)) {
-                  Icon(Icons.Default.CheckCircle, contentDescription = "Attached", tint = Color(0xFF059669), modifier = Modifier.size(18.dp))
-                  Spacer(modifier = Modifier.width(6.dp))
-                  Text(slipFileName ?: "බැංකු රිසිට්පත ඇමුණා ඇත", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color(0xFF065F46))
-                }
-                IconButton(onClick = { slipUri = null; slipFileName = null }, modifier = Modifier.size(20.dp)) {
-                  Icon(Icons.Default.Close, contentDescription = "Remove", tint = Color.Red, modifier = Modifier.size(14.dp))
-                }
-              }
-            }
-          } else {
-            OutlinedButton(
-              onClick = { slipPickerLauncher.launch("image/*") },
-              shape = RoundedCornerShape(10.dp),
-              border = BorderStroke(1.dp, Color(0xFF2563EB)),
-              modifier = Modifier.fillMaxWidth().height(40.dp)
-            ) {
-              Icon(Icons.Default.UploadFile, contentDescription = "Slip", tint = Color(0xFF2563EB), modifier = Modifier.size(16.dp))
-              Spacer(modifier = Modifier.width(6.dp))
-              Text("📎 බැංකු රිසිට්පත එක් කරන්න (Attach Slip)", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color(0xFF2563EB))
-            }
-          }
-
-          Spacer(modifier = Modifier.height(16.dp))
-
-          // WhatsApp Direct Action Button
-          Button(
-            onClick = {
-              val cleanPhone = studentPhone.trim().replace(" ", "").replace("-", "")
-              if (studentName.isBlank() || cleanPhone.isBlank()) {
-                Toast.makeText(context, "කරුණාකර නම සහ දුරකථන අංකය ඇතුළත් කරන්න", Toast.LENGTH_SHORT).show()
-                return@Button
-              }
-
-              val currentNow = System.currentTimeMillis()
-              val currentNowFormatted = SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault()).format(Date(currentNow))
-              val updated = UserAccount(
-                id = user?.id ?: currentNow.toString(),
-                fullName = studentName.trim(),
-                usernameOrPhone = cleanPhone,
-                password = user?.password ?: "1234",
-                isApproved = false,
-                slipImageUri = slipUri?.toString() ?: user?.slipImageUri,
-                paymentStatus = "Pending Approval",
-                requestedGradePackage = selectedPackage,
-                approvedGrades = getApprovedGradesForPackage(selectedPackage),
-                boundDeviceId = currDevId,
-                boundDeviceName = currDevName,
-                requestDate = currentNowFormatted,
-                requestTimestamp = currentNow,
-                approvalTimestamp = null
-              )
-
-              val existingIdx = registeredUsers.indexOfFirst { it.usernameOrPhone.trim().replace(" ", "").replace("-", "").equals(cleanPhone, ignoreCase = true) }
-              if (existingIdx >= 0) {
-                registeredUsers[existingIdx] = updated
-              } else {
-                registeredUsers.add(0, updated)
-              }
-              onUsersUpdated()
-
-              coroutineScope.launch {
-                CloudAuthManager.syncUserToCloud(context, updated)
-              }
-
-              shareApprovalRequestToWhatsApp(
-                context = context,
-                studentName = studentName.trim(),
-                studentPhone = cleanPhone,
-                requestedPackage = selectedPackage,
-                slipAttached = slipUri != null
-              )
-
-              Toast.makeText(context, "📝 ඉල්ලීම සේව් විය! WhatsApp හරහා ඇඩ්මින්ට පණිවිඩය යවන ලදී.", Toast.LENGTH_LONG).show()
-              onDismiss()
-            },
-            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF16A34A)), // WhatsApp Green
-            shape = RoundedCornerShape(12.dp),
-            modifier = Modifier.fillMaxWidth().height(46.dp)
-          ) {
-            Icon(Icons.Default.Send, contentDescription = "WhatsApp", tint = Color.White)
-            Spacer(modifier = Modifier.width(8.dp))
-            Text("📲 WhatsApp හරහා ඇඩ්මින්ට යවන්න", fontWeight = FontWeight.Bold, fontSize = 13.sp)
-          }
-
-          Spacer(modifier = Modifier.height(8.dp))
-
-          // Save Only Button
-          OutlinedButton(
-            onClick = {
-              val cleanPhone = studentPhone.trim().replace(" ", "").replace("-", "")
-              if (studentName.isBlank() || cleanPhone.isBlank()) {
-                Toast.makeText(context, "කරුණාකර නම සහ දුරකථන අංකය ඇතුළත් කරන්න", Toast.LENGTH_SHORT).show()
-                return@OutlinedButton
-              }
-
-              val currentNow = System.currentTimeMillis()
-              val currentNowFormatted = SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault()).format(Date(currentNow))
-              val updated = UserAccount(
-                id = user?.id ?: currentNow.toString(),
-                fullName = studentName.trim(),
-                usernameOrPhone = cleanPhone,
-                password = user?.password ?: "1234",
-                isApproved = false,
-                slipImageUri = slipUri?.toString() ?: user?.slipImageUri,
-                paymentStatus = "Pending Approval",
-                requestedGradePackage = selectedPackage,
-                approvedGrades = getApprovedGradesForPackage(selectedPackage),
-                boundDeviceId = currDevId,
-                boundDeviceName = currDevName,
-                requestDate = currentNowFormatted,
-                requestTimestamp = currentNow,
-                approvalTimestamp = null
-              )
-
-              val existingIdx = registeredUsers.indexOfFirst { it.usernameOrPhone.trim().replace(" ", "").replace("-", "").equals(cleanPhone, ignoreCase = true) }
-              if (existingIdx >= 0) {
-                registeredUsers[existingIdx] = updated
-              } else {
-                registeredUsers.add(0, updated)
-              }
-              onUsersUpdated()
-
-              coroutineScope.launch {
-                CloudAuthManager.syncUserToCloud(context, updated)
-              }
-
-              Toast.makeText(context, "📝 ඉල්ලීම සේව් විය! ඇඩ්මින් පරීක්ෂා කර අනුමත කරන තෙක් මඳක් රැඳී සිටින්න.", Toast.LENGTH_LONG).show()
-              onDismiss()
-            },
-            shape = RoundedCornerShape(12.dp),
-            modifier = Modifier.fillMaxWidth().height(42.dp)
-          ) {
-            Text("💾 ඉල්ලීම සේව් කරන්න පමණක් (Save Only)", fontSize = 11.5.sp, fontWeight = FontWeight.SemiBold)
-          }
-        }
-      }
-    }
-  }
 }

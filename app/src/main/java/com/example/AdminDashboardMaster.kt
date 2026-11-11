@@ -758,12 +758,8 @@ private fun UserManagementSection(
           onResetDeviceLock = {
             val idx = registeredUsers.indexOf(user)
             if (idx != -1) {
-              val updatedUser = user.copy(boundDeviceId = null, boundDeviceName = null, boundDate = null)
-              registeredUsers[idx] = updatedUser
+              registeredUsers[idx] = user.copy(boundDeviceId = null, boundDeviceName = null, boundDate = null)
               onUsersUpdated()
-              coroutineScope.launch {
-                CloudAuthManager.syncUserToCloud(context, updatedUser)
-              }
               Toast.makeText(context, "📱 ${user.fullName} ගේ Device Lock එක ඉවත් කරන ලදී!", Toast.LENGTH_SHORT).show()
             }
           },
@@ -776,54 +772,39 @@ private fun UserManagementSection(
               } else {
                 current.add(gradeNum)
               }
-              val updatedUser = user.copy(approvedGrades = current)
-              registeredUsers[idx] = updatedUser
+              registeredUsers[idx] = user.copy(approvedGrades = current)
               onUsersUpdated()
-              coroutineScope.launch {
-                CloudAuthManager.syncUserToCloud(context, updatedUser)
-              }
             }
           },
           onGrantOlCombo = {
             val idx = registeredUsers.indexOf(user)
             if (idx != -1) {
-              val updatedUser = user.copy(
+              registeredUsers[idx] = user.copy(
                 approvedGrades = listOf("10", "11", "10 ශ්‍රේණිය", "11 ශ්‍රේණිය"),
                 isApproved = true,
                 paymentStatus = "Approved",
                 approvalTimestamp = System.currentTimeMillis()
               )
-              registeredUsers[idx] = updatedUser
               onUsersUpdated()
-              coroutineScope.launch {
-                CloudAuthManager.syncUserToCloud(context, updatedUser)
-              }
               Toast.makeText(context, "${user.fullName} හට 10+11 O/L ප්‍රවේශය (මාස 6 / දින 180) ලබාදුනි!", Toast.LENGTH_SHORT).show()
             }
           },
           onGrantAllGrades = {
             val idx = registeredUsers.indexOf(user)
             if (idx != -1) {
-              val updatedUser = user.copy(
+              registeredUsers[idx] = user.copy(
                 approvedGrades = listOf("06", "07", "08", "09", "10", "11", "6 ශ්‍රේණිය", "7 ශ්‍රේණිය", "8 ශ්‍රේණිය", "9 ශ්‍රේණිය", "10 ශ්‍රේණිය", "11 ශ්‍රේණිය"),
                 isApproved = true,
                 paymentStatus = "Approved",
                 approvalTimestamp = System.currentTimeMillis()
               )
-              registeredUsers[idx] = updatedUser
               onUsersUpdated()
-              coroutineScope.launch {
-                CloudAuthManager.syncUserToCloud(context, updatedUser)
-              }
               Toast.makeText(context, "${user.fullName} හට සියලු ශ්‍රේණි (06-11) ප්‍රවේශය (මාස 6 / දින 180) ලබාදුනි!", Toast.LENGTH_SHORT).show()
             }
           },
           onDelete = {
             registeredUsers.remove(user)
             onUsersUpdated()
-            coroutineScope.launch {
-              CloudAuthManager.deleteUserFromCloud(context, user.usernameOrPhone)
-            }
             Toast.makeText(context, "${user.fullName} ගිණුම මකා දමන ලදී.", Toast.LENGTH_SHORT).show()
           },
           onPreviewReceipt = { uri ->

@@ -112,12 +112,6 @@ fun getEyeCareWebViewJs(mode: EyeCareThemeMode, fontScale: Float = 1.0f): String
     EyeCareThemeMode.DARK -> "filter: invert(0.92) hue-rotate(180deg) brightness(0.88) contrast(1.18) !important; background: #0F172A !important;"
     EyeCareThemeMode.BLUE_LIGHT_SHIELD -> "filter: sepia(0.35) brightness(0.85) contrast(0.98) !important; background: #131B2E !important;"
     EyeCareThemeMode.LIGHT -> "filter: none !important; background: #FFFFFF !important;"
-    EyeCareThemeMode.NORMAL -> "filter: none !important; background: #FFFFFF !important;"
-    EyeCareThemeMode.DEFAULT -> "filter: none !important; background: #FFFFFF !important;"
-    EyeCareThemeMode.NIGHT -> "filter: invert(0.95) hue-rotate(180deg) brightness(0.8) contrast(1.1) !important; background: #000000 !important;"
-    EyeCareThemeMode.AMBER -> "filter: sepia(1.0) hue-rotate(-30deg) brightness(0.85) contrast(0.9) !important; background: #2D1D05 !important;"
-    EyeCareThemeMode.OLED -> "filter: invert(1) hue-rotate(180deg) brightness(0.8) !important; background: #000000 !important;"
-    EyeCareThemeMode.BLUE_LIGHT -> "filter: sepia(0.4) brightness(0.9) !important; background: #E0F2FE !important;"
   }
 
   val zoomPercent = (fontScale * 100).toInt()
@@ -302,17 +296,16 @@ fun EyeCareSettingsBottomSheet(
         EyeCareThemeMode.values().forEach { mode ->
           val isSelected = currentMode == mode
           val bg = when (mode) {
-            EyeCareThemeMode.LIGHT, EyeCareThemeMode.NORMAL, EyeCareThemeMode.DEFAULT -> Color(0xFFF8FAFC)
+            EyeCareThemeMode.LIGHT -> Color(0xFFF8FAFC)
             EyeCareThemeMode.SEPIA -> Color(0xFFFDF6E2)
-            EyeCareThemeMode.DARK, EyeCareThemeMode.NIGHT, EyeCareThemeMode.OLED -> Color(0xFF0F172A)
+            EyeCareThemeMode.DARK -> Color(0xFF0F172A)
             EyeCareThemeMode.BLUE_LIGHT_SHIELD -> Color(0xFF131B2E)
-            EyeCareThemeMode.AMBER -> Color(0xFF451A03)
-            EyeCareThemeMode.BLUE_LIGHT -> Color(0xFFEFF6FF)
           }
           val textColor = when (mode) {
-            EyeCareThemeMode.LIGHT, EyeCareThemeMode.NORMAL, EyeCareThemeMode.DEFAULT, EyeCareThemeMode.BLUE_LIGHT -> Color(0xFF0F172A)
+            EyeCareThemeMode.LIGHT -> Color(0xFF0F172A)
             EyeCareThemeMode.SEPIA -> Color(0xFF2C2214)
-            EyeCareThemeMode.DARK, EyeCareThemeMode.NIGHT, EyeCareThemeMode.OLED, EyeCareThemeMode.BLUE_LIGHT_SHIELD, EyeCareThemeMode.AMBER -> Color(0xFFF1F5F9)
+            EyeCareThemeMode.DARK -> Color(0xFFF1F5F9)
+            EyeCareThemeMode.BLUE_LIGHT_SHIELD -> Color(0xFFFDF0D5)
           }
 
           Surface(
@@ -427,9 +420,10 @@ fun EyeCareSettingsBottomSheet(
         shape = RoundedCornerShape(12.dp),
         colors = CardDefaults.cardColors(
           containerColor = when (currentMode) {
-            EyeCareThemeMode.LIGHT, EyeCareThemeMode.NORMAL, EyeCareThemeMode.DEFAULT, EyeCareThemeMode.BLUE_LIGHT -> Color(0xFFF1F5F9)
+            EyeCareThemeMode.LIGHT -> Color(0xFFF1F5F9)
             EyeCareThemeMode.SEPIA -> Color(0xFFF5EACF)
-            EyeCareThemeMode.DARK, EyeCareThemeMode.NIGHT, EyeCareThemeMode.OLED, EyeCareThemeMode.BLUE_LIGHT_SHIELD, EyeCareThemeMode.AMBER -> Color(0xFF1E293B)
+            EyeCareThemeMode.DARK -> Color(0xFF1E293B)
+            EyeCareThemeMode.BLUE_LIGHT_SHIELD -> Color(0xFF1C273E)
           }
         ),
         modifier = Modifier.fillMaxWidth()
@@ -447,9 +441,10 @@ fun EyeCareSettingsBottomSheet(
             fontSize = (12.sp.value * currentFontScale).sp,
             lineHeight = (18.sp.value * currentFontScale * currentLineSpacing).sp,
             color = when (currentMode) {
-              EyeCareThemeMode.LIGHT, EyeCareThemeMode.NORMAL, EyeCareThemeMode.DEFAULT, EyeCareThemeMode.BLUE_LIGHT -> Color(0xFF0F172A)
+              EyeCareThemeMode.LIGHT -> Color(0xFF0F172A)
               EyeCareThemeMode.SEPIA -> Color(0xFF2C2214)
-              EyeCareThemeMode.DARK, EyeCareThemeMode.NIGHT, EyeCareThemeMode.OLED, EyeCareThemeMode.BLUE_LIGHT_SHIELD, EyeCareThemeMode.AMBER -> Color(0xFFF1F5F9)
+              EyeCareThemeMode.DARK -> Color(0xFFF1F5F9)
+              EyeCareThemeMode.BLUE_LIGHT_SHIELD -> Color(0xFFFDF0D5)
             }
           )
         }
@@ -534,16 +529,18 @@ fun EyeCareQuickTogglePill(
     onClick = onClick,
     shape = RoundedCornerShape(20.dp),
     color = when (currentMode) {
-      EyeCareThemeMode.LIGHT, EyeCareThemeMode.NORMAL, EyeCareThemeMode.DEFAULT, EyeCareThemeMode.BLUE_LIGHT -> Color(0xFFEFF6FF)
+      EyeCareThemeMode.LIGHT -> Color(0xFFEFF6FF)
       EyeCareThemeMode.SEPIA -> Color(0xFFF5EACF)
-      EyeCareThemeMode.DARK, EyeCareThemeMode.NIGHT, EyeCareThemeMode.OLED, EyeCareThemeMode.BLUE_LIGHT_SHIELD, EyeCareThemeMode.AMBER -> Color(0xFF1E293B)
+      EyeCareThemeMode.DARK -> Color(0xFF1E293B)
+      EyeCareThemeMode.BLUE_LIGHT_SHIELD -> Color(0xFF1C273E)
     },
     border = BorderStroke(
       1.dp,
       when (currentMode) {
-        EyeCareThemeMode.LIGHT, EyeCareThemeMode.NORMAL, EyeCareThemeMode.DEFAULT, EyeCareThemeMode.BLUE_LIGHT -> Color(0xFFBFDBFE)
+        EyeCareThemeMode.LIGHT -> Color(0xFFBFDBFE)
         EyeCareThemeMode.SEPIA -> Color(0xFFD6C4A5)
-        EyeCareThemeMode.DARK, EyeCareThemeMode.NIGHT, EyeCareThemeMode.OLED, EyeCareThemeMode.BLUE_LIGHT_SHIELD, EyeCareThemeMode.AMBER -> Color(0xFF475569)
+        EyeCareThemeMode.DARK -> Color(0xFF475569)
+        EyeCareThemeMode.BLUE_LIGHT_SHIELD -> Color(0xFFF59E0B)
       }
     ),
     modifier = modifier.testTag("eyecare_quick_toggle_pill")
@@ -556,18 +553,18 @@ fun EyeCareQuickTogglePill(
       Spacer(modifier = Modifier.width(4.dp))
       Text(
         text = when (currentMode) {
-          EyeCareThemeMode.LIGHT, EyeCareThemeMode.NORMAL, EyeCareThemeMode.DEFAULT -> "දිවා"
+          EyeCareThemeMode.LIGHT -> "දිවා"
           EyeCareThemeMode.SEPIA -> "සේපියා"
-          EyeCareThemeMode.DARK, EyeCareThemeMode.NIGHT, EyeCareThemeMode.OLED -> "රාත්‍රී"
-          EyeCareThemeMode.BLUE_LIGHT, EyeCareThemeMode.BLUE_LIGHT_SHIELD -> "Eye-Care"
-          EyeCareThemeMode.AMBER -> "ඇම්බර්"
+          EyeCareThemeMode.DARK -> "රාත්‍රී"
+          EyeCareThemeMode.BLUE_LIGHT_SHIELD -> "Eye-Care"
         },
         fontSize = 11.sp,
         fontWeight = FontWeight.Bold,
         color = when (currentMode) {
-          EyeCareThemeMode.LIGHT, EyeCareThemeMode.NORMAL, EyeCareThemeMode.DEFAULT, EyeCareThemeMode.BLUE_LIGHT -> Color(0xFF1D4ED8)
+          EyeCareThemeMode.LIGHT -> Color(0xFF1D4ED8)
           EyeCareThemeMode.SEPIA -> Color(0xFF8D5B00)
-          EyeCareThemeMode.DARK, EyeCareThemeMode.NIGHT, EyeCareThemeMode.OLED, EyeCareThemeMode.BLUE_LIGHT_SHIELD, EyeCareThemeMode.AMBER -> Color(0xFF38BDF8)
+          EyeCareThemeMode.DARK -> Color(0xFF38BDF8)
+          EyeCareThemeMode.BLUE_LIGHT_SHIELD -> Color(0xFFF59E0B)
         }
       )
     }
@@ -651,10 +648,10 @@ fun EyeCareNightStudyScreen(
           .background(
             Brush.linearGradient(
               colors = when (currentMode) {
-                EyeCareThemeMode.LIGHT, EyeCareThemeMode.NORMAL, EyeCareThemeMode.DEFAULT -> listOf(Color(0xFF1E3A8A), Color(0xFF2563EB), Color(0xFF38BDF8))
+                EyeCareThemeMode.LIGHT -> listOf(Color(0xFF1E3A8A), Color(0xFF2563EB), Color(0xFF38BDF8))
                 EyeCareThemeMode.SEPIA -> listOf(Color(0xFF451A03), Color(0xFF78350F), Color(0xFFB45309))
-                EyeCareThemeMode.DARK, EyeCareThemeMode.NIGHT, EyeCareThemeMode.OLED -> listOf(Color(0xFF020617), Color(0xFF0F172A), Color(0xFF1E293B))
-                EyeCareThemeMode.BLUE_LIGHT_SHIELD, EyeCareThemeMode.BLUE_LIGHT, EyeCareThemeMode.AMBER -> listOf(Color(0xFF0A1128), Color(0xFF1C2541), Color(0xFF3A506B))
+                EyeCareThemeMode.DARK -> listOf(Color(0xFF020617), Color(0xFF0F172A), Color(0xFF1E293B))
+                EyeCareThemeMode.BLUE_LIGHT_SHIELD -> listOf(Color(0xFF0A1128), Color(0xFF1C2541), Color(0xFF3A506B))
               }
             )
           )
@@ -699,17 +696,16 @@ fun EyeCareNightStudyScreen(
         EyeCareThemeMode.values().forEach { mode ->
           val isSelected = currentMode == mode
           val bg = when (mode) {
-            EyeCareThemeMode.LIGHT, EyeCareThemeMode.NORMAL, EyeCareThemeMode.DEFAULT -> Color(0xFFFFFFFF)
+            EyeCareThemeMode.LIGHT -> Color(0xFFFFFFFF)
             EyeCareThemeMode.SEPIA -> Color(0xFFFDF6E2)
-            EyeCareThemeMode.DARK, EyeCareThemeMode.NIGHT, EyeCareThemeMode.OLED -> Color(0xFF0F172A)
+            EyeCareThemeMode.DARK -> Color(0xFF0F172A)
             EyeCareThemeMode.BLUE_LIGHT_SHIELD -> Color(0xFF131B2E)
-            EyeCareThemeMode.AMBER -> Color(0xFF451A03)
-            EyeCareThemeMode.BLUE_LIGHT -> Color(0xFFEFF6FF)
           }
           val textColor = when (mode) {
-            EyeCareThemeMode.LIGHT, EyeCareThemeMode.NORMAL, EyeCareThemeMode.DEFAULT, EyeCareThemeMode.BLUE_LIGHT -> Color(0xFF0F172A)
+            EyeCareThemeMode.LIGHT -> Color(0xFF0F172A)
             EyeCareThemeMode.SEPIA -> Color(0xFF2C2214)
-            EyeCareThemeMode.DARK, EyeCareThemeMode.NIGHT, EyeCareThemeMode.OLED, EyeCareThemeMode.BLUE_LIGHT_SHIELD, EyeCareThemeMode.AMBER -> Color(0xFFF1F5F9)
+            EyeCareThemeMode.DARK -> Color(0xFFF1F5F9)
+            EyeCareThemeMode.BLUE_LIGHT_SHIELD -> Color(0xFFFDF0D5)
           }
 
           Card(
@@ -836,10 +832,10 @@ fun EyeCareNightStudyScreen(
             shape = RoundedCornerShape(10.dp),
             colors = CardDefaults.cardColors(
               containerColor = when (currentMode) {
-                EyeCareThemeMode.LIGHT, EyeCareThemeMode.NORMAL, EyeCareThemeMode.DEFAULT, EyeCareThemeMode.BLUE_LIGHT -> Color.White
+                EyeCareThemeMode.LIGHT -> Color.White
                 EyeCareThemeMode.SEPIA -> Color(0xFFFDF6E2)
-                EyeCareThemeMode.DARK, EyeCareThemeMode.NIGHT, EyeCareThemeMode.OLED -> Color(0xFF0F172A)
-                EyeCareThemeMode.BLUE_LIGHT_SHIELD, EyeCareThemeMode.AMBER -> Color(0xFF131B2E)
+                EyeCareThemeMode.DARK -> Color(0xFF0F172A)
+                EyeCareThemeMode.BLUE_LIGHT_SHIELD -> Color(0xFF131B2E)
               }
             ),
             modifier = Modifier.fillMaxWidth()
@@ -857,9 +853,10 @@ fun EyeCareNightStudyScreen(
                 fontSize = (13.sp.value * currentFontScale).sp,
                 lineHeight = (19.sp.value * currentFontScale * currentLineSpacing).sp,
                 color = when (currentMode) {
-                  EyeCareThemeMode.LIGHT, EyeCareThemeMode.NORMAL, EyeCareThemeMode.DEFAULT, EyeCareThemeMode.BLUE_LIGHT -> Color(0xFF0F172A)
+                  EyeCareThemeMode.LIGHT -> Color(0xFF0F172A)
                   EyeCareThemeMode.SEPIA -> Color(0xFF2C2214)
-                  EyeCareThemeMode.DARK, EyeCareThemeMode.NIGHT, EyeCareThemeMode.OLED, EyeCareThemeMode.BLUE_LIGHT_SHIELD, EyeCareThemeMode.AMBER -> Color(0xFFF1F5F9)
+                  EyeCareThemeMode.DARK -> Color(0xFFF1F5F9)
+                  EyeCareThemeMode.BLUE_LIGHT_SHIELD -> Color(0xFFFDF0D5)
                 }
               )
             }

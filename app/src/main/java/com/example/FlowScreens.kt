@@ -18,6 +18,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
+import com.example.referral.ReferralBanner
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
@@ -1429,7 +1430,7 @@ fun SubjectPhotoCard(
           contentAlignment = Alignment.Center
         ) {
           Icon(
-            imageVector = subject.icon ?: Icons.Default.Book,
+            imageVector = subject.icon,
             contentDescription = subject.name,
             tint = Color.White,
             modifier = Modifier.size(20.dp)
@@ -3047,7 +3048,7 @@ fun SubjectContentScreen(
         ScienceGrade10And11MasterHub(
           currentGrade = grade,
           onOpenFullReader = { pdfUrl ->
-            onPdfClick("10 හා 11 ශ්‍රේණි විද්‍යාව විෂය නිර්දේශ Hub", pdfUrl, false, null as String?)
+            onPdfClick("10 හා 11 ශ්‍රේණි විද්‍යාව විෂය නිර්දේශ Hub", pdfUrl, false, null)
           }
         )
 

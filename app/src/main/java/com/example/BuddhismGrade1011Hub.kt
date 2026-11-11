@@ -328,34 +328,33 @@ fun BuddhismInlineModuleContent(
 }
 
 @Composable
-fun BuddhismFactCompactCard(point: SubjectFactPoint, accentColor: Color) {
-  Card(
+fun BuddhismFactCompactCard(point: SubjectFactPoint, themeColor: Color) {
+  Surface(
     shape = RoundedCornerShape(8.dp),
-    colors = CardDefaults.cardColors(containerColor = Color(0xFFF8FAFC)),
-    border = BorderStroke(1.dp, accentColor.copy(alpha = 0.2f)),
-    modifier = Modifier.fillMaxWidth().padding(vertical = 2.dp)
+    color = Color(0xFF1E293B),
+    border = BorderStroke(0.8.dp, Color(0xFF334155)),
+    modifier = Modifier.fillMaxWidth()
   ) {
-    Column(modifier = Modifier.padding(8.dp)) {
-      Text(
-        text = point.title,
-        fontSize = 11.sp,
-        fontWeight = FontWeight.Bold,
-        color = accentColor,
-        maxLines = 1,
-        overflow = TextOverflow.Ellipsis
-      )
-      Spacer(modifier = Modifier.height(2.dp))
-      Text(
-        text = point.detail,
-        fontSize = 10.sp,
-        color = Color(0xFF334155),
-        maxLines = 2,
-        overflow = TextOverflow.Ellipsis
-      )
+    Row(
+      modifier = Modifier.padding(8.dp),
+      verticalAlignment = Alignment.Top
+    ) {
+      Box(
+        modifier = Modifier
+          .size(20.dp)
+          .background(themeColor.copy(alpha = 0.2f), CircleShape),
+        contentAlignment = Alignment.Center
+      ) {
+        Text(text = "${point.number}", fontSize = 9.sp, fontWeight = FontWeight.Bold, color = themeColor)
+      }
+      Spacer(modifier = Modifier.width(8.dp))
+      Column {
+        Text(text = point.title, color = Color.White, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+        Text(text = point.detail, color = Color(0xFF94A3B8), fontSize = 9.5.sp, maxLines = 2, overflow = TextOverflow.Ellipsis)
+      }
     }
   }
 }
-
 
 /**
  * 🌟 FULL SCREEN DEDICATED DIALOG FOR BUDDHISM 10 & 11 SYLLABUS MASTER HUB

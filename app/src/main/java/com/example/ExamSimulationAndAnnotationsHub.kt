@@ -45,6 +45,28 @@ import java.util.*
 // 1. LIVE MOCK EXAM HALL SIMULATION WITH OMR BUBBLE SHEET (සැබෑ විභාග ශාලා අනුකරණය)
 // ==============================================================================
 
+data class MockExamQuestion(
+  val id: Int,
+  val questionText: String,
+  val options: List<String>,
+  val correctOption: Int, // 1, 2, 3, 4
+  val explanation: String,
+  val topicName: String
+)
+
+data class MockExamPaper(
+  val id: String,
+  val titleSinhala: String,
+  val subject: String,
+  val grade: String,
+  val term: Int = 1,
+  val paperNumber: Int = 1,
+  val durationMinutes: Int = 60,
+  val totalQuestions: Int = 60,
+  val syllabusCoverageSummary: String = "",
+  val questions: List<MockExamQuestion>,
+  val pdfUri: String? = null
+)
 
 object MockExamRepository {
   fun getAvailableMockExams(grade: String, term: Int = 1, subject: String = "විද්‍යාව"): List<MockExamPaper> {
@@ -1194,8 +1216,8 @@ fun ActiveMockExamSession(
   var remainingSeconds by remember { mutableStateOf(exam.durationMinutes * 60) }
   var isTimerRunning by remember { mutableStateOf(true) }
   var currentQuestionIndex by remember { mutableStateOf(0) }
-  val answersMap = remember { mutableStateMapOf<Any, Int>() } // Question ID -> Selected Bubble (1..4)
-  val flaggedQuestions = remember { mutableStateListOf<Any>() }
+  val answersMap = remember { mutableStateMapOf<Int, Int>() } // Question ID -> Selected Bubble (1..4)
+  val flaggedQuestions = remember { mutableStateListOf<Int>() }
   var isExamSubmitted by remember { mutableStateOf(false) }
   var showConfirmSubmitDialog by remember { mutableStateOf(false) }
   var activeTab by remember { mutableStateOf(0) } // 0: ප්‍රශ්න විචාරය (Question View), 1: OMR Sheet Matrix

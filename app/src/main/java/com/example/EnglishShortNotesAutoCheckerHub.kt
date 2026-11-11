@@ -41,8 +41,55 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import java.util.Locale
 
-// Models moved to AppModels.kt
+enum class EnglishGradeLevel(val label: String, val badgeColor: Color) {
+  ALL("සියලු ශ්‍රේණි (10, 11)", Color(0xFF1E293B)),
+  GRADE_11("11 ශ්‍රේණිය (O/L)", Color(0xFF047857)),
+  GRADE_10("10 ශ්‍රේණිය", Color(0xFF1D4ED8))
+}
 
+enum class EnglishSkillCategory(
+  val displayName: String,
+  val iconEmoji: String,
+  val primaryColor: Color,
+  val bgLightColor: Color
+) {
+  ALL("සියලු මාතෘකා", "📚", Color(0xFF1E3A8A), Color(0xFFEFF6FF)),
+  TENSES("Tenses & Verb Forms", "⏳", Color(0xFF0284C7), Color(0xFFF0F9FF)),
+  PASSIVE_VOICE("Active & Passive Voice", "🔄", Color(0xFF059669), Color(0xFFF0FDF4)),
+  REPORTED_SPEECH("Direct & Indirect Speech", "💬", Color(0xFFD97706), Color(0xFFFFFBEB)),
+  CONDITIONALS("If Clauses & Conditionals", "🔀", Color(0xFF7C3AED), Color(0xFFFAF5FF)),
+  PREPOSITIONS("Prepositions & Phrasal Verbs", "📍", Color(0xFFDB2777), Color(0xFFFDF2F8)),
+  CONJUNCTIONS("Conjunctions & Connectors", "🔗", Color(0xFF4F46E5), Color(0xFFEEF2FF)),
+  RELATIVE_CLAUSES("Relative Clauses (who/which/that)", "👥", Color(0xFF0D9488), Color(0xFFF0FDFA)),
+  QUESTION_TAGS("Question Tags & Inversions", "❓", Color(0xFFEA580C), Color(0xFFFFF7ED)),
+  VOCABULARY("Vocabulary, Idioms & Collocations", "📖", Color(0xFF2563EB), Color(0xFFEFF6FF)),
+  ERROR_CORRECTION("Sentence Structure & Errors", "✍️", Color(0xFFB91C1C), Color(0xFFFEF2F2)),
+  MODALS("Modal Auxiliaries", "🛡️", Color(0xFF0891B2), Color(0xFFECFEFF))
+}
+
+data class EnglishGrammarRuleSummary(
+  val title: String,
+  val category: EnglishSkillCategory,
+  val formula: String,
+  val explanationSinhala: String,
+  val examples: List<String>,
+  val commonMistake: String
+)
+
+data class EnglishShortNoteQuestionItem(
+  val id: String,
+  val number: Int,
+  val gradeLevel: EnglishGradeLevel,
+  val category: EnglishSkillCategory,
+  val topicTitle: String,
+  val questionPrompt: String,
+  val questionSinhalaGuidance: String,
+  val options: List<String>,
+  val correctOptionIndex: Int,
+  val explanationSinhala: String,
+  val grammarRuleOrFormula: String,
+  val examTip: String
+)
 
 object EnglishShortNotesRepository {
   // 50 Comprehensive Grammar Rules with Sinhala Explanations & Bilingual Sentences
