@@ -90,6 +90,18 @@ data class GlossaryTermItem(
   val examTip: String = ""
 )
 
+data class FormulaItem(
+  val id: String = "",
+  val category: String = "MATH",
+  val nameSinhala: String = "",
+  val formula: String = "",
+  val explanation: String = "",
+  val unitsOrEra: String = "",
+  val grade: String = "10",
+  val subject: String = "ගණිතය",
+  val examTip: String = ""
+)
+
 data class MockExamQuestion(
   val id: Any = 0,
   val questionText: String = "",
@@ -250,3 +262,66 @@ enum class EyeCareThemeMode(
   BLUE_LIGHT_SHIELD("🛡️", "Blue Light Shield", "නිල් කිරණ 95%ක් අවහිර කරයි"),
   AMBER("🕯️", "ඇම්බර් උණුසුම් ආලෝකය (Amber)", "සුව නින්දට බාධා නොවන උණුසුම් පැහැය")
 }
+
+data class StructuredSubQuestion(
+  val subLabel: String = "",
+  val promptSinhala: String = "",
+  val marks: Int = 2,
+  val answerKeySinhala: String = "",
+  val markingSchemePoints: List<String> = emptyList()
+)
+
+data class StructuredEssayItem(
+  val id: String = "",
+  val grade: String = "10",
+  val subject: String = "විද්‍යාව",
+  val topicSinhala: String = "",
+  val type: String = "STRUCTURED",
+  val totalMarks: Int = 15,
+  val mainScenario: String = "",
+  val subQuestions: List<StructuredSubQuestion> = emptyList(),
+  val setNumber: Int = 1,
+  val questionIndexInSet: Int = 1,
+  val globalIndex: Int = 1,
+  val unitCategory: String = ""
+)
+
+data class SyllabusUnit(
+  val id: String = "",
+  val grade: String = "10",
+  val subject: String = "විද්‍යාව",
+  val unitNumber: Int = 1,
+  val titleSinhala: String = "",
+  val englishTitle: String = "",
+  val keyConcepts: List<String> = emptyList(),
+  val sampleDoubts: List<String> = emptyList(),
+  val coreFormulaOrRule: String = "",
+  val examTip: String = "",
+  val fullExplanation: String = ""
+)
+
+data class SentencePuzzleCategory(
+  val id: Int = 1,
+  val icon: String = "🧩",
+  val title: String = "",
+  val titleSinhala: String = title,
+  val titleEnglish: String = "",
+  val description: String = "",
+  val items: List<SentencePuzzleItem> = emptyList(),
+  val puzzles: List<SentencePuzzleItem> = items
+)
+
+data class VoiceQuestionItem(
+  val id: String = "",
+  val grade: String = "10",
+  val subject: String = "විද්‍යාව",
+  val setNumber: Int = 1,
+  val questionIndexInSet: Int = 1,
+  val globalIndex: Int = 1,
+  val questionSinhala: String = "",
+  val questionEnglishPhonetic: String = "",
+  val expectedKeywords: List<String> = emptyList(),
+  val modelAnswer: String = "",
+  val hint: String = "",
+  val unitCategory: String = ""
+)

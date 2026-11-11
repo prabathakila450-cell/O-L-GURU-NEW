@@ -491,3 +491,63 @@ private fun BookmarksAndFavoritesScreenContent(
     }
   }
 }
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun SpokenEnglishVoiceRecognitionScreen(onBack: () -> Unit) {
+  Scaffold(
+    topBar = {
+      TopAppBar(
+        title = {
+          Text(
+            text = "🎙️ ස්පෝකන් ඉංග්‍රීසි පුහුණුව (Spoken English)",
+            fontWeight = FontWeight.Bold,
+            color = Color.White,
+            fontSize = 15.sp
+          )
+        },
+        navigationIcon = {
+          IconButton(onClick = onBack) {
+            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = Color.White)
+          }
+        },
+        colors = TopAppBarDefaults.topAppBarColors(containerColor = Color(0xFF0E7490))
+      )
+    }
+  ) { padding ->
+    Column(
+      modifier = Modifier
+        .fillMaxSize()
+        .padding(padding)
+        .background(Color(0xFFF8FAFC))
+        .padding(16.dp),
+      horizontalAlignment = Alignment.CenterHorizontally,
+      verticalArrangement = Arrangement.Center
+    ) {
+      Text(
+        text = "🗣️ ඉංග්‍රීසි කථන හා දෙබස් පුහුණුව",
+        fontSize = 18.sp,
+        fontWeight = FontWeight.Bold,
+        color = Color(0xFF0F172A)
+      )
+      Spacer(modifier = Modifier.height(8.dp))
+      Text(
+        text = "දෛනික භාවිත ඉංග්‍රීසි වාක්‍ය ඛණ්ඩ, උච්චාරණ සහ දෙබස් පුහුණුව.",
+        fontSize = 13.sp,
+        color = Color(0xFF64748B),
+        textAlign = TextAlign.Center
+      )
+      Spacer(modifier = Modifier.height(16.dp))
+      Button(
+        onClick = onBack,
+        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF0E7490)),
+        shape = RoundedCornerShape(10.dp)
+      ) {
+        Text("ආපසු යන්න (Back)", fontSize = 13.sp)
+      }
+    }
+  }
+}
+
+@Composable
+fun CountdownAndPlannerScreen(onBack: () -> Unit) {}

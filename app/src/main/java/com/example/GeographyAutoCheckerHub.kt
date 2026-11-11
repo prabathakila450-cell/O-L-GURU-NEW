@@ -414,10 +414,11 @@ fun GeographyAutoCheckerScreen(
                                         gridScrollState.scrollTo(0)
                                     }
                                     Box(modifier = Modifier.fillMaxSize().verticalScroll(gridScrollState)) {
+                                        val filteredCategories = masterCategories.filter { cat ->
+                                            if (currentGradeTab == "10") cat.categoryNumber <= 10 else cat.categoryNumber > 10
+                                        }
                                         GeographyQuickOverviewGrid(
-                                            categories = masterCategories.filter { cat ->
-                                                if (currentGradeTab == "10") cat.categoryNumber <= 10 else cat.categoryNumber > 10
-                                            }.ifEmpty { masterCategories },
+                                            categories = if (filteredCategories.isEmpty()) masterCategories else filteredCategories,
                                             onSelectModule = { selectedCategoryNumber = it }
                                         )
                                     }
