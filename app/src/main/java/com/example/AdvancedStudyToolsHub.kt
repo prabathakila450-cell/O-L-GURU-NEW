@@ -1009,15 +1009,7 @@ fun CommerceSimpleCompoundInterestSolverView() {
 // 🌟 FEATURE 5: TRI-LINGUAL GLOSSARY (SCIENCE, MATHS, ICT, COMMERCE)
 // ==============================================================================
 
-data class GlossaryTermItem(
-  val id: String,
-  val englishTerm: String,
-  val sinhalaTerm: String,
-  val tamilTerm: String,
-  val subject: String,
-  val definitionSinhala: String,
-  val examTip: String
-)
+// Models moved to AppModels.kt
 
 val sampleGlossaryTerms: List<GlossaryTermItem>
   get() = TrilingualGlossaryRepository.allGlossaryTerms
@@ -1705,16 +1697,7 @@ fun TriLingualGlossaryScreen(
 // 🌟 FEATURE 6: TIMED PAST PAPER SIMULATOR (YEAR-BY-YEAR MCQ EXAM)
 // ==============================================================================
 
-data class PastPaperQuestion(
-  val id: Int,
-  val questionText: String,
-  val options: List<String>,
-  val correctOptionIndex: Int,
-  val explanationSinhala: String,
-  val topicCategory: String = "",
-  val year: String = "",
-  val subject: String = ""
-)
+// Model moved to AppModels.kt
 
 val samplePastPaperQuestions = listOf(
   PastPaperQuestion(
@@ -1770,7 +1753,7 @@ fun TimedPastPaperSimulatorScreen(
   var isExamRunning by remember { mutableStateOf(false) }
   var isExamFinished by remember { mutableStateOf(false) }
   var currentQuestionIndex by remember { mutableIntStateOf(0) }
-  val studentAnswers = remember { mutableStateMapOf<Int, Int>() } // questionId -> optionIndex
+  val studentAnswers = remember { mutableStateMapOf<Any, Int>() } // questionId -> optionIndex
   var remainingSeconds by remember { mutableIntStateOf(60 * 60) } // 60 minutes = 3600 seconds
 
   // Fetch exactly 60 questions for the selected subject and year, strictly interleaved across diverse topics
